@@ -108,6 +108,15 @@
     details summary { cursor:pointer; color:#374151; font-weight:700; }
     details .hint { margin-top:10px; }
     code { background:#f3f4f6; padding: 1px 6px; border-radius: 6px; }
+
+    /* 담당자 링크/패널 */
+    .personLink{ text-decoration: underline; cursor:pointer; color:#1f2937; }
+    .personLink:hover{ color:#111827; }
+    .panelHead{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .panelTitle{ font-weight:800; }
+    .panelMeta{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .miniBtn{ border:1px solid var(--bd); background:#fff; border-radius:10px; padding:6px 10px; font-size:12px; cursor:pointer; }
+    .miniBtn:hover{ background:#fafafa; }
   </style>
 </head>
 <body>
@@ -161,7 +170,7 @@
       <div class="list">
         <div class="head">검색 결과 (파트 / 담당자)</div>
         <div class="body">
-          <div id="resultsEmpty" class="empty">검색어를 입력하면 결과가 나와요.</div>
+          <div class="empty" style="padding:10px 12px; border-bottom:1px solid var(--bd); background:#fff;">팁: <b>담당자 이름 클릭</b>하면 그 사람이 해본 곡 목록이 뜹니다.</div><div id="resultsEmpty" class="empty">검색어를 입력하면 결과가 나와요.</div>
           <table id="resultsTable" style="display:none;">
             <thead>
               <tr><th style="width:40%;">파트</th><th>담당자</th></tr>
@@ -172,7 +181,25 @@
       </div>
     </div>
 
-   
+
+    <div id="personPanel" class="card" style="display:none;">
+      <div class="panelHead">
+        <div>
+          <div class="panelTitle"><span id="ppName"></span> · 참여 기록</div>
+          <div class="hint" style="margin:6px 0 0;">아래 곡 클릭하면 검색창에 자동 입력됩니다.</div>
+        </div>
+        <div class="panelMeta">
+          <span class="chip" id="ppSongCount">0곡</span>
+          <button class="miniBtn" id="ppClose" type="button">닫기</button>
+        </div>
+      </div>
+
+      <div class="list" style="margin-top:10px;">
+        <div class="head"><span>해본 곡 목록</span><span class="chip" id="ppRowCount">0행</span></div>
+        <div class="body" id="ppBody"></div>
+      </div>
+    </div>
+
 
 <script>
   // 팀 게시용 고정 시트
@@ -202,6 +229,13 @@
   const elAC = document.getElementById("ac");
   const elACBody = document.getElementById("acBody");
   const elACMeta = document.getElementById("acMeta");
+  const elPersonPanel = document.getElementById("personPanel");
+  const elPPName = document.getElementById("ppName");
+  const elPPSongCount = document.getElementById("ppSongCount");
+  const elPPRowCount = document.getElementById("ppRowCount");
+  const elPPBody = document.getElementById("ppBody");
+  const elPPClose = document.getElementById("ppClose");
+
 
   function setStatus(msg, ok=true, loading=false) {
     elStatusText.textContent = msg;
@@ -292,6 +326,8 @@
 
   function renderResults() {
     const qn = norm(elQ.value);
+
+    // 검색어 없으면 결과표 숨김
     if (!qn) {
       elResultsTable.style.display = "none";
       elResultsEmpty.style.display = "block";
@@ -300,8 +336,21 @@
       return;
     }
 
+    // 1) 부분일치 먼저 찾고
     const matches = DB.filter(r => r.songKey.includes(qn));
-    const uniq = uniqueBy(matches, r => `${r.partKey}||${r.personKey}`)
+
+    // 2) 완전일치가 있으면 그걸 우선
+    const exact = matches.filter(r => r.songKey === qn);
+    const picked = exact.length ? exact : matches;
+
+    // 3) (파트+담당자) 기준 중복 제거 + 같은 조합이 여러 번 있으면 "n회"로 표시
+    const countMap = new Map();
+    for (const r of picked) {
+      const k = `${r.partKey}||${r.personKey}`;
+      countMap.set(k, (countMap.get(k) || 0) + 1);
+    }
+
+    const uniq = uniqueBy(picked, r => `${r.partKey}||${r.personKey}`)
       .sort((a,b) => a.part.localeCompare(b.part, "ko"));
 
     elResults.innerHTML = "";
@@ -314,9 +363,36 @@
 
     elResultsEmpty.style.display = "none";
     elResultsTable.style.display = "table";
+
     uniq.forEach(r => {
+      const k = `${r.partKey}||${r.personKey}`;
+      const cnt = countMap.get(k) || 1;
+
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${escapeHTML(r.part)}</td><td>${escapeHTML(r.person)}</td>`;
+
+      const td1 = document.createElement("td");
+      td1.textContent = r.part;
+
+      const td2 = document.createElement("td");
+      // 담당자 클릭 -> 참여 기록 패널
+      const name = document.createElement("span");
+      name.className = "personLink";
+      name.textContent = r.person;
+      name.title = "클릭하면 이 담당자 참여곡 보기";
+      name.addEventListener("click", () => openPersonPanel(r.person));
+
+      td2.appendChild(name);
+
+      if (cnt > 1) {
+        const badge = document.createElement("span");
+        badge.className = "chip";
+        badge.style.marginLeft = "8px";
+        badge.textContent = `${cnt}회`;
+        td2.appendChild(badge);
+      }
+
+      tr.appendChild(td1);
+      tr.appendChild(td2);
       elResults.appendChild(tr);
     });
   }
@@ -434,6 +510,62 @@
     }
     return out;
   }
+
+
+  function openPersonPanel(personName) {
+    const pk = norm(personName);
+    if (!pk) return;
+
+    const rows = DB.filter(r => r.personKey === pk);
+
+    // 곡 단위로 묶기
+    const songMap = new Map(); // songKey -> {song, count, parts:Set}
+    for (const r of rows) {
+      const sk = r.songKey;
+      if (!songMap.has(sk)) songMap.set(sk, { song: r.song, count: 0, parts: new Set() });
+      const it = songMap.get(sk);
+      it.count += 1;
+      it.parts.add(r.part);
+    }
+
+    const songs = [...songMap.values()]
+      .sort((a,b) => a.song.localeCompare(b.song, "ko"));
+
+    elPPName.textContent = personName;
+    elPPSongCount.textContent = songs.length + "곡";
+    elPPRowCount.textContent = rows.length + "행";
+
+    elPPBody.innerHTML = "";
+    if (!songs.length) {
+      elPPBody.innerHTML = `<div class="empty">기록 없음</div>`;
+    } else {
+      songs.forEach(s => {
+        const div = document.createElement("div");
+        div.className = "item";
+        const parts = [...s.parts].join(", ");
+        const right = [];
+        if (s.count > 1) right.push(`${s.count}행`);
+        if (parts) right.push(parts);
+        div.innerHTML = `<span>${escapeHTML(s.song)}</span><span class="chip">${escapeHTML(right.join(" · ") || "보기")}</span>`;
+        div.addEventListener("click", () => {
+          elQ.value = s.song;
+          closeAC();
+          renderAll();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+        elPPBody.appendChild(div);
+      });
+    }
+
+    elPersonPanel.style.display = "block";
+    // 패널이 열려있으면 사용자가 다음 클릭으로 바로 쓰게
+  }
+
+  function closePersonPanel() {
+    elPersonPanel.style.display = "none";
+    elPPBody.innerHTML = "";
+  }
+
 
   async function connect() {
     const sheetId = extractSheetId(FIXED_SHEET_URL);
@@ -583,9 +715,12 @@
     if (!elAC.contains(e.target) && e.target !== elQ) closeAC();
   });
 
+  elPPClose.addEventListener("click", closePersonPanel);
+
   elClear.addEventListener("click", () => {
     elQ.value = "";
     closeAC();
+    closePersonPanel();
     renderAll();
     elQ.focus();
   });
