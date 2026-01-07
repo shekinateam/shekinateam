@@ -74,6 +74,9 @@
       font-size:12px; background:var(--chip); padding:2px 8px; border-radius:999px;
       color:#374151; white-space:nowrap;
     }
+    .chip.warn{ background: rgba(254,226,226,.9); color:#7f1d1d; }
+    .chip.ok{ background: rgba(220,252,231,.9); color:#065f46; }
+
     .empty{ color:var(--muted); font-size:13px; padding:12px; }
 
     table{ width:100%; border-collapse:collapse; }
@@ -118,6 +121,7 @@
       padding:6px 10px; font-size:12px; cursor:pointer; text-decoration:none; color:var(--fg);
     }
     .miniBtn:hover{ background:#fafafa; }
+    .miniBtn.active{ border-color:#cbd5e1; box-shadow:0 0 0 4px rgba(148,163,184,.18); font-weight:800; }
 
     /* 날짜 칩 */
     .dateChips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
@@ -134,6 +138,27 @@
       padding:6px 10px; font-size:12px; cursor:pointer;
     }
     .btn:hover{ background:#fafafa; }
+
+    /* 필터 바 */
+    .filterRow{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    }
+    .filterLeft{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+    }
+    .filterRight{
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;
+    }
+    select{
+      border:1px solid var(--bd);
+      border-radius:10px;
+      padding:6px 10px;
+      font-size:12px;
+      background:#fff;
+      cursor:pointer;
+      outline:none;
+    }
+    select:focus{ border-color:#cbd5e1; box-shadow:0 0 0 4px rgba(148,163,184,.18); }
   </style>
 </head>
 <body>
@@ -170,9 +195,52 @@
       </div>
     </div>
 
+    <!-- ✅ 곡 목록 필터 -->
+    <div class="card" id="filterCard">
+      <div class="panelHead">
+        <div>
+          <div class="panelTitle">곡 목록 필터</div>
+          <div class="hint" style="margin:6px 0 0;">
+            “최근 부른 곡 / 최근 자주 부른 곡 / 오래 안 한 곡”은 <b>DB의 날짜</b>를 기준으로 계산됩니다.<br/>
+            <b>날짜가 없는 곡도 목록에 함께 표시</b>되며, 칩에 <b>“날짜 없음”</b>으로 표시돼요.
+          </div>
+        </div>
+        <span class="chip" id="filterCount">0</span>
+      </div>
+
+      <div class="filterRow" style="margin-top:10px;">
+        <div class="filterLeft">
+          <button class="miniBtn" id="modeRecent" type="button">최근 부른 곡</button>
+          <button class="miniBtn" id="modeFrequent" type="button">최근 자주 부른 곡</button>
+          <button class="miniBtn" id="modeOld" type="button">오래 안 한 곡</button>
+
+          <span class="chip" id="weeksChip">12주</span>
+
+          <select id="weeksSel" title="기간(주)">
+            <option value="4">4주</option>
+            <option value="8">8주</option>
+            <option value="12" selected>12주</option>
+            <option value="24">24주</option>
+            <option value="52">52주</option>
+          </select>
+
+          <select id="sortSel" title="정렬">
+            <option value="default" selected>기본 정렬</option>
+            <option value="az">가나다</option>
+          </select>
+
+          <button class="miniBtn" id="filterReset" type="button">초기화</button>
+        </div>
+
+        <div class="filterRight">
+          <span class="chip" id="noDateChip" title="현재 목록 중 날짜가 없는 곡 수">날짜없음 0</span>
+        </div>
+      </div>
+    </div>
+
     <div class="grid">
       <div class="list">
-        <div class="head"><span>전체 곡 목록</span><span class="chip" id="songCount">0</span></div>
+        <div class="head"><span id="songListTitle">곡 목록</span><span class="chip" id="songCount">0</span></div>
         <div class="body" id="songs"></div>
       </div>
 
@@ -232,10 +300,9 @@
         <div>
           <div class="panelTitle">콘티 리스트</div>
           <div class="hint" style="margin:6px 0 0;">
-            오늘 하루도 화이팅 ! 
+            오늘 하루도 화이팅!
           </div>
         </div>
-        <!-- 시트 열기 버튼 삭제 -->
       </div>
 
       <div class="hint" style="margin-top:10px; font-weight:700;">리스트 선택</div>
@@ -279,7 +346,7 @@
   const FIXED_GID = '1851883768';
   const FIXED_SHEET_NAME = 'DB';
 
-  // META 탭(선택) - 탭 이름이 META이면 자동 로드
+  // META 탭(선택)
   const META_SHEET_NAME = 'META';
   const META_GID = ''; // 모르면 비워두면 됨
 
@@ -296,7 +363,7 @@
   }
   const trim = (s) => (s ?? "").toString().trim();
 
-  function normDate(d){
+  function normDateStr(d){
     const s = trim((d ?? "").toString());
     if (!s) return "";
     let m = s.match(/Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/i);
@@ -316,6 +383,18 @@
     }
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
     return s;
+  }
+
+  function toDateTs(v){
+    const s = normDateStr(v);
+    if (!s) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)){
+      const [y, m, d] = s.split("-").map(n => parseInt(n,10));
+      const dt = new Date(y, m-1, d);
+      const ts = dt.getTime();
+      return Number.isFinite(ts) ? ts : null;
+    }
+    return null;
   }
 
   function escapeHTML(s){
@@ -360,11 +439,21 @@
     return m ? m[1] : null;
   }
 
+  function fmtYmd(ts){
+    if (!ts) return "";
+    const d = new Date(ts);
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    return `${y}-${m}-${dd}`;
+  }
+
   // ===== DOM =====
   const elQ = document.getElementById("q");
   const elClear = document.getElementById("clear");
   const elSongs = document.getElementById("songs");
   const elSongCount = document.getElementById("songCount");
+  const elSongListTitle = document.getElementById("songListTitle");
 
   const elResultsEmpty = document.getElementById("resultsEmpty");
   const elResultsTable = document.getElementById("resultsTable");
@@ -405,6 +494,17 @@
   const elSlCopyBtn = document.getElementById("slCopyBtn");
   const elSlReloadBtn = document.getElementById("slReloadBtn");
 
+  // filter dom
+  const elModeRecent = document.getElementById("modeRecent");
+  const elModeFrequent = document.getElementById("modeFrequent");
+  const elModeOld = document.getElementById("modeOld");
+  const elWeeksSel = document.getElementById("weeksSel");
+  const elWeeksChip = document.getElementById("weeksChip");
+  const elSortSel = document.getElementById("sortSel");
+  const elFilterReset = document.getElementById("filterReset");
+  const elFilterCount = document.getElementById("filterCount");
+  const elNoDateChip = document.getElementById("noDateChip");
+
   function setStatus(msg, ok=true, loading=false){
     elStatusText.textContent = msg;
     elStatus.className = "status " + (loading ? "loading" : "") + " " + (ok ? "ok" : "bad");
@@ -412,9 +512,15 @@
 
   // ===== 데이터 =====
   let DB = [];
-  let SONGS = [];
   let META = new Map(); // songKey -> {song, scoreUrl, linkUrl, note, warn}
+  let SONGS = [];       // 전체 곡명 목록 (DB 기반)
+  let SONG_INFO = new Map(); // songKey -> { song, lastTs, totalCount, tsList: number[] } (날짜 있는 기록만 tsList에 저장)
   let LAST_MEDIA = { scores: new Set(), videos: new Set() };
+
+  // filter state
+  const FILTER_DEFAULT = { mode: "recent", weeks: 12, sort: "default" };
+  let FILTER = { ...FILTER_DEFAULT };
+  const FREQUENT_MIN_COUNT = 2; // “최근 자주 부른 곡” 기준(2회 이상)
 
   // setlists
   let activeSetlistKey = SETLIST_TABS[0].key;
@@ -422,6 +528,114 @@
 
   function rebuildSongs(){
     SONGS = uniqueBy(DB, r => r.songKey).map(r => r.song).sort((a,b) => a.localeCompare(b,"ko"));
+  }
+
+  function buildSongInfo(){
+    SONG_INFO = new Map();
+    for (const r of DB){
+      const sk = r.songKey;
+      if (!SONG_INFO.has(sk)){
+        SONG_INFO.set(sk, { song: r.song, lastTs: null, totalCount: 0, tsList: [] });
+      }
+      const it = SONG_INFO.get(sk);
+      it.song = it.song || r.song;
+      it.totalCount += 1;
+
+      const ts = toDateTs(r.date);
+      if (ts){
+        it.tsList.push(ts);
+        if (!it.lastTs || ts > it.lastTs) it.lastTs = ts;
+      }
+    }
+    for (const it of SONG_INFO.values()){
+      it.tsList.sort((a,b) => a - b);
+    }
+  }
+
+  function cutoffTsByWeeks(weeks){
+    const now = new Date();
+    const ms = weeks * 7 * 24 * 60 * 60 * 1000;
+    return now.getTime() - ms;
+  }
+
+  function countInWindow(tsList, cutoffTs){
+    let lo = 0, hi = tsList.length;
+    while (lo < hi){
+      const mid = (lo + hi) >> 1;
+      if (tsList[mid] < cutoffTs) lo = mid + 1;
+      else hi = mid;
+    }
+    return tsList.length - lo;
+  }
+
+  // ✅ 날짜 없는 곡도 결과에 포함(클릭 가능)
+  function getFilteredSongKeys(){
+    const cutoff = cutoffTsByWeeks(FILTER.weeks);
+
+    let keys = [];
+    let noDateCount = 0;
+
+    for (const [sk, info] of SONG_INFO.entries()){
+      const hasDate = !!info.lastTs;
+
+      if (!hasDate){
+        // 날짜 없으면 "계산은 못하지만" 목록에는 포함
+        noDateCount += 1;
+        keys.push(sk);
+        continue;
+      }
+
+      if (FILTER.mode === "recent"){
+        const c = countInWindow(info.tsList, cutoff);
+        if (c >= 1) keys.push(sk);
+      } else if (FILTER.mode === "frequent"){
+        const c = countInWindow(info.tsList, cutoff);
+        if (c >= FREQUENT_MIN_COUNT) keys.push(sk);
+      } else if (FILTER.mode === "old"){
+        if (info.lastTs < cutoff) keys.push(sk);
+      }
+    }
+
+    elNoDateChip.textContent = "날짜없음 " + noDateCount;
+    elNoDateChip.style.display = noDateCount ? "inline-block" : "none";
+
+    return keys;
+  }
+
+  function getFilteredSongs(){
+    const keys = getFilteredSongKeys();
+    const list = keys.map(sk => {
+      const info = SONG_INFO.get(sk);
+      return { songKey: sk, song: info?.song || "", info };
+    });
+
+    // 정렬
+    if (FILTER.sort === "az"){
+      list.sort((a,b) => a.song.localeCompare(b.song, "ko"));
+    } else {
+      if (FILTER.mode === "recent"){
+        // 날짜 없는 곡은 lastTs=null -> 0 처리되어 자연스럽게 아래로
+        list.sort((a,b) => ((b.info.lastTs || 0) - (a.info.lastTs || 0)));
+      } else if (FILTER.mode === "frequent"){
+        const cutoff = cutoffTsByWeeks(FILTER.weeks);
+        list.sort((a,b) => {
+          // 날짜 없는 곡은 tsList가 비어있어서 count=0 -> 아래로
+          const ca = countInWindow(a.info.tsList, cutoff);
+          const cb = countInWindow(b.info.tsList, cutoff);
+          if (cb !== ca) return cb - ca;
+          return (b.info.lastTs || 0) - (a.info.lastTs || 0);
+        });
+      } else if (FILTER.mode === "old"){
+        // ✅ 날짜 없는 곡이 위로 올라오지 않게: null은 맨 아래로
+        list.sort((a,b) => {
+          const ta = (a.info.lastTs === null) ? Number.POSITIVE_INFINITY : a.info.lastTs;
+          const tb = (b.info.lastTs === null) ? Number.POSITIVE_INFINITY : b.info.lastTs;
+          return ta - tb;
+        });
+      }
+    }
+
+    return list;
   }
 
   // ===== GVIZ JSONP =====
@@ -596,35 +810,6 @@
     return m;
   }
 
-  // ===== 렌더: 왼쪽 목록 =====
-  function renderSongList(){
-    const qn = norm(elQ.value);
-    const filtered = qn ? SONGS.filter(s => norm(s).includes(qn)) : SONGS;
-
-    elSongCount.textContent = filtered.length.toString();
-    elSongs.innerHTML = filtered.length ? "" : `<div class="empty">아직 곡 목록을 못 불러왔어요.</div>`;
-
-    filtered.slice(0, 400).forEach(song => {
-      const div = document.createElement("div");
-      div.className = "item";
-      div.innerHTML = `<span>${highlight(song, qn)}</span><span class="chip">클릭</span>`;
-      div.addEventListener("click", () => {
-        elQ.value = song;
-        closeAC();
-        renderAll();
-        elQ.focus();
-      });
-      elSongs.appendChild(div);
-    });
-
-    if (filtered.length > 400){
-      const more = document.createElement("div");
-      more.className = "empty";
-      more.textContent = "목록이 많아서 400개까지만 보여줘요. 검색어를 더 입력해 주세요.";
-      elSongs.appendChild(more);
-    }
-  }
-
   // ===== 미디어(중복 제거) =====
   function hideMediaBox(){
     elMediaBox.style.display = "none";
@@ -758,7 +943,7 @@
       const k = `${r.partKey}||${r.personKey}`;
       if (!group.has(k)) group.set(k, { part:r.part, person:r.person, dates:new Set() });
       const it = group.get(k);
-      const nd = normDate(r.date);
+      const nd = normDateStr(r.date);
       if (nd) it.dates.add(nd);
     }
 
@@ -810,6 +995,76 @@
     });
 
     renderMetaForSong();
+  }
+
+  // ===== 왼쪽 곡 목록(필터 적용) =====
+  function activeModeLabel(){
+    if (FILTER.mode === "recent") return "최근 부른 곡";
+    if (FILTER.mode === "frequent") return "최근 자주 부른 곡";
+    if (FILTER.mode === "old") return "오래 안 한 곡";
+    return "곡 목록";
+  }
+
+  function setActiveModeButtons(){
+    elModeRecent.classList.toggle("active", FILTER.mode === "recent");
+    elModeFrequent.classList.toggle("active", FILTER.mode === "frequent");
+    elModeOld.classList.toggle("active", FILTER.mode === "old");
+  }
+
+  function renderSongList(){
+    const filtered = getFilteredSongs();
+    const qn = norm(elQ.value);
+    const view = qn ? filtered.filter(x => norm(x.song).includes(qn)) : filtered;
+
+    elWeeksChip.textContent = FILTER.weeks + "주";
+    elSongListTitle.textContent = "곡 목록 · " + activeModeLabel() + " (" + FILTER.weeks + "주)";
+    elFilterCount.textContent = filtered.length + "곡";
+    elSongCount.textContent = view.length.toString();
+
+    elSongs.innerHTML = view.length ? "" : `<div class="empty">조건에 맞는 곡이 없어요.</div>`;
+
+    const cutoff = cutoffTsByWeeks(FILTER.weeks);
+
+    view.slice(0, 600).forEach(x => {
+      const div = document.createElement("div");
+      div.className = "item";
+
+      let rightChip = "클릭";
+      let rightChipClass = "chip";
+
+      if (!x.info || x.info.lastTs === null){
+        rightChip = "날짜 없음";
+        rightChipClass = "chip warn";
+      } else {
+        if (FILTER.mode === "recent"){
+          rightChip = "마지막 " + fmtYmd(x.info.lastTs);
+          rightChipClass = "chip ok";
+        } else if (FILTER.mode === "frequent"){
+          const c = countInWindow(x.info.tsList, cutoff);
+          rightChip = FILTER.weeks + "주 " + c + "회";
+          rightChipClass = "chip ok";
+        } else if (FILTER.mode === "old"){
+          rightChip = "마지막 " + fmtYmd(x.info.lastTs);
+          rightChipClass = "chip warn";
+        }
+      }
+
+      div.innerHTML = `<span>${highlight(x.song, qn)}</span><span class="${rightChipClass}">${escapeHTML(rightChip)}</span>`;
+      div.addEventListener("click", () => {
+        elQ.value = x.song;
+        closeAC();
+        renderAll();
+        elQ.focus();
+      });
+      elSongs.appendChild(div);
+    });
+
+    if (view.length > 600){
+      const more = document.createElement("div");
+      more.className = "empty";
+      more.textContent = "목록이 많아서 600개까지만 보여줘요. 검색어를 더 입력해 주세요.";
+      elSongs.appendChild(more);
+    }
   }
 
   // ===== 자동완성 =====
@@ -973,7 +1228,7 @@
       b.className = "miniBtn";
       b.textContent = def.title;
       b.style.borderRadius = "999px";
-      if (def.key === activeSetlistKey) b.style.fontWeight = "800";
+      if (def.key === activeSetlistKey) b.classList.add("active");
       b.addEventListener("click", () => {
         activeSetlistKey = def.key;
         slRenderTabs();
@@ -992,7 +1247,7 @@
 
     elSlBody.innerHTML = "";
     if (!arr.length){
-      elSlBody.innerHTML = `<div class="empty">아직 곡이 없어요.</div>`;
+      elSlBody.innerHTML = `<div class="empty">아직 곡이 없어요. (시트 탭 <b>${escapeHTML(def?.sheet || "")}</b>의 A열에 곡명을 추가해 주세요.)</div>`;
       return;
     }
 
@@ -1031,6 +1286,41 @@
     setStatus("콘티 새로고침 완료", true, false);
   });
 
+  // ===== 필터 이벤트 =====
+  function applyFilterAndRender(){
+    setActiveModeButtons();
+    renderSongList();
+    renderAC();
+  }
+
+  function setFilterMode(mode){
+    FILTER.mode = mode;
+    elSortSel.value = "default";
+    FILTER.sort = "default";
+    applyFilterAndRender();
+  }
+
+  elModeRecent.addEventListener("click", () => setFilterMode("recent"));
+  elModeFrequent.addEventListener("click", () => setFilterMode("frequent"));
+  elModeOld.addEventListener("click", () => setFilterMode("old"));
+
+  elWeeksSel.addEventListener("change", () => {
+    FILTER.weeks = parseInt(elWeeksSel.value, 10) || FILTER_DEFAULT.weeks;
+    applyFilterAndRender();
+  });
+
+  elSortSel.addEventListener("change", () => {
+    FILTER.sort = elSortSel.value || "default";
+    applyFilterAndRender();
+  });
+
+  elFilterReset.addEventListener("click", () => {
+    FILTER = { ...FILTER_DEFAULT };
+    elWeeksSel.value = String(FILTER.weeks);
+    elSortSel.value = "default";
+    setFilterMode(FILTER.mode);
+  });
+
   // ===== 전체 렌더 =====
   function renderAll(){
     renderSongList();
@@ -1038,6 +1328,7 @@
     renderAC();
     slRenderTabs();
     slRenderList();
+    setActiveModeButtons();
   }
 
   // ===== 연결(DB/META/SETLIST) =====
@@ -1062,7 +1353,9 @@
         const p2 = await loadGvizJSONP(urlByGid);
         DB = toDBWithHeaderRecovery(p2.cols, p2.rows);
       }
+
       rebuildSongs();
+      buildSongInfo();
 
       try{
         const metaUrlBySheet = base + "&sheet=" + encodeURIComponent(META_SHEET_NAME);
@@ -1084,6 +1377,9 @@
 
       await loadAllSetlists();
 
+      elWeeksSel.value = String(FILTER.weeks);
+      setFilterMode(FILTER.mode);
+
       renderAll();
       setStatus("연결 완료 (DB " + DB.length + "행 / 곡 " + SONGS.length + "개)", true, false);
     } catch(e){
@@ -1091,8 +1387,10 @@
     }
   }
 
-  // ===== 이벤트 =====
-  elQ.addEventListener("input", () => renderAll());
+  // ===== 검색 이벤트 =====
+  elQ.addEventListener("input", () => {
+    renderAll();
+  });
 
   elQ.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown"){
@@ -1132,6 +1430,7 @@
   });
 
   // ===== 시작 =====
+  setActiveModeButtons();
   slRenderTabs();
   slRenderList();
 
