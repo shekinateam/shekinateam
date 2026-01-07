@@ -201,8 +201,8 @@
         <div>
           <div class="panelTitle">곡 목록 필터</div>
           <div class="hint" style="margin:6px 0 0;">
-            “최근 부른 곡 / 최근 자주 부른 곡 / 오래 안 한 곡”은 <b>DB의 날짜</b>를 기준으로 계산됩니다.<br/>
-            <b>날짜가 없는 곡도 목록에 함께 표시</b>되며, 칩에 <b>“날짜 없음”</b>으로 표시돼요.
+            “최근에 불렀던 곡 흐름도 참고하시고 <b>주일·수련회 콘티도 함께 확인하실 수 있으니 편하게 사용해 주세요</b><br/>
+            <b>오늘 하루도 주님 안에서 힘내시길 바랍니다.</b>
           </div>
         </div>
         <span class="chip" id="filterCount">0</span>
@@ -358,14 +358,55 @@
   ];
 
   // ===== 유틸 =====
+  const KST_TZ = "Asia/Seoul";
+  const KST_OFFSET_HOURS = 9;
+
+  // 텍스트 정규화: 공백/제로폭/BOM 제거 + 소문자
   function norm(s){
     return (s ?? "").toString().replace(/[\s\u200B\u200C\u200D\uFEFF]+/g, "").toLowerCase();
   }
   const trim = (s) => (s ?? "").toString().trim();
 
+  // ✅ "지금"을 한국시간 기준으로 고정한 epoch(ms)
+  function nowKSTTs(){
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: KST_TZ,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false,
+    }).formatToParts(now);
+
+    const map = {};
+    for (const p of parts) if (p.type !== "literal") map[p.type] = p.value;
+
+    const y = parseInt(map.year, 10);
+    const m = parseInt(map.month, 10);
+    const d = parseInt(map.day, 10);
+    const hh = parseInt(map.hour, 10);
+    const mm = parseInt(map.minute, 10);
+    const ss = parseInt(map.second, 10);
+
+    // map은 "KST 시각"이므로 UTC epoch로 바꿀 때 9시간 빼줌
+    return Date.UTC(y, m - 1, d, hh - KST_OFFSET_HOURS, mm, ss);
+  }
+
+  // ✅ epoch(ms)를 한국시간 YYYY-MM-DD로 출력
+  function fmtYmdKST(ts){
+    if (!ts) return "";
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: KST_TZ,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date(ts));
+  }
+
   function normDateStr(d){
     const s = trim((d ?? "").toString());
     if (!s) return "";
+
+    // GVIZ Date(2026,0,4) 또는 2026,0,4
     let m = s.match(/Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/i);
     if (!m) m = s.match(/^(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/);
     if (m){
@@ -374,6 +415,8 @@
       const dd = String(parseInt(m[3],10)).padStart(2,"0");
       return `${y}-${mm}-${dd}`;
     }
+
+    // YYYY.MM.DD / YYYY/MM/DD -> YYYY-MM-DD
     m = s.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
     if (m){
       const y = m[1];
@@ -381,17 +424,19 @@
       const dd = m[3].padStart(2,"0");
       return `${y}-${mm}-${dd}`;
     }
+
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
     return s;
   }
 
+  // ✅ DB 날짜(YYYY-MM-DD)는 "한국 달력 날짜"로 해석(해외 접속해도 동일)
   function toDateTs(v){
     const s = normDateStr(v);
     if (!s) return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)){
       const [y, m, d] = s.split("-").map(n => parseInt(n,10));
-      const dt = new Date(y, m-1, d);
-      const ts = dt.getTime();
+      // KST 자정(00:00)을 UTC로 환산 = 전날 15:00Z
+      const ts = Date.UTC(y, m-1, d, -KST_OFFSET_HOURS, 0, 0);
       return Number.isFinite(ts) ? ts : null;
     }
     return null;
@@ -439,13 +484,9 @@
     return m ? m[1] : null;
   }
 
+  // ✅ 표시도 한국시간 고정
   function fmtYmd(ts){
-    if (!ts) return "";
-    const d = new Date(ts);
-    const y = d.getFullYear();
-    const m = String(d.getMonth()+1).padStart(2,"0");
-    const dd = String(d.getDate()).padStart(2,"0");
-    return `${y}-${m}-${dd}`;
+    return fmtYmdKST(ts);
   }
 
   // ===== DOM =====
@@ -552,10 +593,11 @@
     }
   }
 
+  // ✅ cutoff 계산의 '오늘'도 한국시간 고정
   function cutoffTsByWeeks(weeks){
-    const now = new Date();
+    const nowTs = nowKSTTs();
     const ms = weeks * 7 * 24 * 60 * 60 * 1000;
-    return now.getTime() - ms;
+    return nowTs - ms;
   }
 
   function countInWindow(tsList, cutoffTs){
@@ -579,7 +621,6 @@
       const hasDate = !!info.lastTs;
 
       if (!hasDate){
-        // 날짜 없으면 "계산은 못하지만" 목록에는 포함
         noDateCount += 1;
         keys.push(sk);
         continue;
@@ -609,24 +650,20 @@
       return { songKey: sk, song: info?.song || "", info };
     });
 
-    // 정렬
     if (FILTER.sort === "az"){
       list.sort((a,b) => a.song.localeCompare(b.song, "ko"));
     } else {
       if (FILTER.mode === "recent"){
-        // 날짜 없는 곡은 lastTs=null -> 0 처리되어 자연스럽게 아래로
         list.sort((a,b) => ((b.info.lastTs || 0) - (a.info.lastTs || 0)));
       } else if (FILTER.mode === "frequent"){
         const cutoff = cutoffTsByWeeks(FILTER.weeks);
         list.sort((a,b) => {
-          // 날짜 없는 곡은 tsList가 비어있어서 count=0 -> 아래로
           const ca = countInWindow(a.info.tsList, cutoff);
           const cb = countInWindow(b.info.tsList, cutoff);
           if (cb !== ca) return cb - ca;
           return (b.info.lastTs || 0) - (a.info.lastTs || 0);
         });
       } else if (FILTER.mode === "old"){
-        // ✅ 날짜 없는 곡이 위로 올라오지 않게: null은 맨 아래로
         list.sort((a,b) => {
           const ta = (a.info.lastTs === null) ? Number.POSITIVE_INFINITY : a.info.lastTs;
           const tb = (b.info.lastTs === null) ? Number.POSITIVE_INFINITY : b.info.lastTs;
