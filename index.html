@@ -1,4 +1,3 @@
-
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
@@ -119,6 +118,7 @@
     .miniBtn{
       border:1px solid var(--bd); background:#fff; border-radius:10px;
       padding:6px 10px; font-size:12px; cursor:pointer; text-decoration:none; color:var(--fg);
+      display:inline-flex; align-items:center; justify-content:center;
     }
     .miniBtn:hover{ background:#fafafa; }
     .miniBtn.active{ border-color:#cbd5e1; box-shadow:0 0 0 4px rgba(148,163,184,.18); font-weight:800; }
@@ -360,6 +360,9 @@
       </div>
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+        <!-- ✅ 콘티(리스트) 단위 악보 버튼 -->
+        <a id="slScoreBtn" class="miniBtn" href="#" target="_blank" rel="noopener" style="display:none;">콘티 악보</a>
+
         <button class="miniBtn" id="slCopyBtn" type="button">복사</button>
         <button class="miniBtn" id="slReloadBtn" type="button">새로고침</button>
       </div>
@@ -567,6 +570,7 @@
   const elSlBody = document.getElementById("slBody");
   const elSlCopyBtn = document.getElementById("slCopyBtn");
   const elSlReloadBtn = document.getElementById("slReloadBtn");
+  const elSlScoreBtn = document.getElementById("slScoreBtn"); // ✅ 콘티 악보 버튼
 
   // filter dom
   const elModeRecent = document.getElementById("modeRecent");
@@ -606,7 +610,7 @@
 
   // setlists
   let activeSetlistKey = SETLIST_TABS[0].key;
-  let SETLIST_CACHE = new Map();
+  let SETLIST_CACHE = new Map(); // key -> { songs:[], scoreUrl:"" }
 
   function rebuildSongs(){
     SONGS = uniqueBy(DB, r => r.songKey).map(r => r.song).sort((a,b) => a.localeCompare(b,"ko"));
@@ -1448,26 +1452,43 @@
     return out;
   }
 
+  // ✅ A열: 곡명, B열: 콘티악보URL(한 칸만 사용)
   async function loadSetlistFromSheet(sheetName){
     const sheetId = extractSheetId(FIXED_SHEET_URL);
     const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
-    const tq = encodeURIComponent("select A where A is not null");
+
+    const tq = encodeURIComponent("select A, B where A is not null or B is not null");
     const url = base + "&sheet=" + encodeURIComponent(sheetName) + "&tq=" + tq;
 
     const p = await loadGvizJSONP(url);
-    const songs = (p.rows || []).map(r => trim(r[0] ?? "")).filter(Boolean);
+    const rows = (p.rows || []);
 
-    const cleaned = (songs[0] && norm(songs[0]) === norm("곡명")) ? songs.slice(1) : songs;
-    return uniqSongs(cleaned);
+    // 콘티 악보 URL: B열에서 처음 나오는 값 1개만 사용
+    let scoreUrl = "";
+    for (const r of rows){
+      const b = trim(r[1] ?? "");
+      if (!b) continue;
+      const bn = norm(b);
+      if (bn === norm("콘티악보url") || bn === norm("악보url") || bn === norm("악보")) continue;
+      scoreUrl = b;
+      break;
+    }
+
+    // 곡 리스트: A열만
+    const songsRaw = rows.map(r => trim(r[0] ?? "")).filter(Boolean);
+    const cleaned = (songsRaw[0] && norm(songsRaw[0]) === norm("곡명")) ? songsRaw.slice(1) : songsRaw;
+    const songs = uniqSongs(cleaned);
+
+    return { songs, scoreUrl };
   }
 
   async function loadAllSetlists(){
     for (const def of SETLIST_TABS){
       try{
-        const songs = await loadSetlistFromSheet(def.sheet);
-        SETLIST_CACHE.set(def.key, songs);
+        const data = await loadSetlistFromSheet(def.sheet);
+        SETLIST_CACHE.set(def.key, data); // { songs, scoreUrl }
       } catch(e){
-        SETLIST_CACHE.set(def.key, []);
+        SETLIST_CACHE.set(def.key, { songs: [], scoreUrl: "" });
       }
     }
   }
@@ -1492,10 +1513,21 @@
 
   function slRenderList(){
     const def = SETLIST_TABS.find(d => d.key === activeSetlistKey);
-    const arr = SETLIST_CACHE.get(activeSetlistKey) || [];
+    const data = SETLIST_CACHE.get(activeSetlistKey) || { songs: [], scoreUrl: "" };
+    const arr = data.songs || [];
+    const scoreUrl = trim(data.scoreUrl || "");
 
     elSlTitle.textContent = def ? def.title : activeSetlistKey;
     elSlCount.textContent = String(arr.length);
+
+    // ✅ 콘티(리스트) 단위 악보 버튼
+    if (scoreUrl){
+      elSlScoreBtn.href = scoreUrl;
+      elSlScoreBtn.style.display = "inline-flex";
+    } else {
+      elSlScoreBtn.style.display = "none";
+      elSlScoreBtn.href = "#";
+    }
 
     elSlBody.innerHTML = "";
     if (!arr.length){
@@ -1519,8 +1551,14 @@
 
   elSlCopyBtn.addEventListener("click", async () => {
     const def = SETLIST_TABS.find(d => d.key === activeSetlistKey);
-    const a = SETLIST_CACHE.get(activeSetlistKey) || [];
-    const text = [(def ? def.title : activeSetlistKey), ...a.map((s,i) => `${i+1}. ${s}`)].join("\n");
+    const data = SETLIST_CACHE.get(activeSetlistKey) || { songs: [], scoreUrl: "" };
+    const a = data.songs || [];
+    const scoreUrl = trim(data.scoreUrl || "");
+
+    const lines = [(def ? def.title : activeSetlistKey)];
+    if (scoreUrl) lines.push("콘티 악보: " + scoreUrl);
+    lines.push(...a.map((s,i) => `${i+1}. ${s}`));
+    const text = lines.join("\n");
 
     try{
       await navigator.clipboard.writeText(text);
