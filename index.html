@@ -1,3 +1,4 @@
+
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
@@ -118,7 +119,6 @@
     .miniBtn{
       border:1px solid var(--bd); background:#fff; border-radius:10px;
       padding:6px 10px; font-size:12px; cursor:pointer; text-decoration:none; color:var(--fg);
-      display:inline-flex; align-items:center; justify-content:center;
     }
     .miniBtn:hover{ background:#fafafa; }
     .miniBtn.active{ border-color:#cbd5e1; box-shadow:0 0 0 4px rgba(148,163,184,.18); font-weight:800; }
@@ -360,9 +360,7 @@
       </div>
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
-        <!-- ✅ 콘티(리스트) 단위 악보 버튼 -->
-        <a id="slScoreBtn" class="miniBtn" href="#" target="_blank" rel="noopener" style="display:none;">콘티 악보</a>
-
+        <!-- ✅ DB 탭 SETLIST 메타에서 읽어오는 '콘티 악보' 버튼(자동 생성됨) -->
         <button class="miniBtn" id="slCopyBtn" type="button">복사</button>
         <button class="miniBtn" id="slReloadBtn" type="button">새로고침</button>
       </div>
@@ -524,6 +522,41 @@
 
   function fmtYmd(ts){ return fmtYmdKST(ts); }
 
+  // ✅ "악보 G키 https://..." / "영상 https://..." (여러 줄) 파싱
+  function parseSheetLinks(cell, fallbackLabel){
+    const raw = (cell ?? "").toString().trim();
+    if (!raw) return [];
+
+    const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    const out = [];
+
+    for (const line of lines){
+      // (옵션) "라벨|URL"도 지원
+      if (line.includes("|")){
+        const [labelRaw, ...rest] = line.split("|");
+        const label = labelRaw.trim();
+        const url = rest.join("|").trim();
+        if (url) out.push({ url, label: label || (fallbackLabel || "링크") });
+        continue;
+      }
+
+      const parts = line.split(/\s+/);
+      const urlIdx = parts.findIndex(p => /^https?:\/\//i.test(p));
+      if (urlIdx >= 0){
+        const url = parts[urlIdx];
+        const label = parts.slice(0, urlIdx).join(" ").trim(); // "악보 G키"
+        out.push({ url, label: label || (fallbackLabel || "링크") });
+        continue;
+      }
+
+      if (/^https?:\/\//i.test(line)){
+        out.push({ url: line, label: fallbackLabel || "링크" });
+        continue;
+      }
+    }
+    return out;
+  }
+
   // ===== DOM =====
   const elQ = document.getElementById("q");
   const elClear = document.getElementById("clear");
@@ -570,7 +603,6 @@
   const elSlBody = document.getElementById("slBody");
   const elSlCopyBtn = document.getElementById("slCopyBtn");
   const elSlReloadBtn = document.getElementById("slReloadBtn");
-  const elSlScoreBtn = document.getElementById("slScoreBtn"); // ✅ 콘티 악보 버튼
 
   // filter dom
   const elModeRecent = document.getElementById("modeRecent");
@@ -595,6 +627,10 @@
   let SONG_INFO = new Map();
   let LAST_MEDIA = { scores: new Set(), videos: new Set() };
 
+  // ✅ DB 탭의 SETLIST 메타 행(콘티 묶음 악보 링크)
+  // key: "주일콘티" 같은 시트명(SETLIST_TABS[i].sheet) -> { scoreUrl, videoUrl, memo }
+  let SETLIST_META = new Map();
+
   // ✅ 송품 상태(날짜 필터)
   const POOM_STATE = {
     lastSongKey: "",
@@ -610,7 +646,7 @@
 
   // setlists
   let activeSetlistKey = SETLIST_TABS[0].key;
-  let SETLIST_CACHE = new Map(); // key -> { songs:[], scoreUrl:"" }
+  let SETLIST_CACHE = new Map();
 
   function rebuildSongs(){
     SONGS = uniqueBy(DB, r => r.songKey).map(r => r.song).sort((a,b) => a.localeCompare(b,"ko"));
@@ -788,6 +824,9 @@
     return -1;
   }
 
+  // ✅ DB + SETLIST 메타 분리 파싱
+  // - 일반 DB 행: song/part/person 필수
+  // - SETLIST 메타 행: 구분(type) = SETLIST / 콘티 / setlistmeta 등이고, song = "주일콘티" 같은 시트명
   function toDBWithHeaderRecovery(cols, rows){
     const songKeys = ["곡명","노래","노래제목","제목","song","title","name"];
     const partKeys = ["파트악기","파트","악기","instrument","part","세션"];
@@ -796,6 +835,7 @@
     const scoreKeys = ["악보url","악보","score","sheet","chord","악보링크"];
     const videoKeys = ["영상url","영상","video","youtube","유튜브"];
     const poomKeys = ["송품","메모","노트","note","memo","주의","주의사항","유의사항","warn","warning"];
+    const typeKeys = ["구분","type","kind","분류","메타","meta"];
 
     let header = cols.map(h => norm(h));
     let dataRows = rows;
@@ -807,6 +847,7 @@
     let idxScore = findCol(header, scoreKeys);
     let idxVideo = findCol(header, videoKeys);
     let idxPoom = findCol(header, poomKeys);
+    let idxType = findCol(header, typeKeys);
 
     const labelsBad = header.every(h => !h || /^[a-z]$/.test(h));
     if ((idxSong < 0 || idxPart < 0 || idxPerson < 0) && dataRows.length && labelsBad){
@@ -818,10 +859,11 @@
       const sc2 = findCol(firstRowHeader, scoreKeys);
       const vd2 = findCol(firstRowHeader, videoKeys);
       const po2 = findCol(firstRowHeader, poomKeys);
+      const t2  = findCol(firstRowHeader, typeKeys);
       if (s2 >= 0 && p2 >= 0 && m2 >= 0){
         header = firstRowHeader;
         idxSong = s2; idxPart = p2; idxPerson = m2;
-        idxDate = d2; idxScore = sc2; idxVideo = vd2; idxPoom = po2;
+        idxDate = d2; idxScore = sc2; idxVideo = vd2; idxPoom = po2; idxType = t2;
         dataRows = dataRows.slice(1);
       }
     }
@@ -833,6 +875,8 @@
     }
 
     const out = [];
+    const setlistMeta = new Map();
+
     for (const r of dataRows){
       const song = trim(r[idxSong] ?? "");
       const part = trim(r[idxPart] ?? "");
@@ -841,7 +885,19 @@
       const scoreUrl = (idxScore >= 0) ? trim(r[idxScore] ?? "") : "";
       const videoUrl = (idxVideo >= 0) ? trim(r[idxVideo] ?? "") : "";
       const songPoom = (idxPoom >= 0) ? trim(r[idxPoom] ?? "") : "";
+      const type = (idxType >= 0) ? norm(r[idxType] ?? "") : "";
 
+      // ✅ SETLIST 메타 행: 구분이 setlist 류이면 분리 저장 (song 값이 시트명)
+      if (type === "setlist" || type === "콘티" || type === "콘티메타" || type === "setlistmeta"){
+        if (song){
+          // scoreUrl 칸에 여러 줄이 들어가면 첫 번째 URL만 콘티 악보로 쓸 수도 있음
+          // 여기서는 그냥 원문 통째로 저장해두고, 표시할 때 parseSheetLinks로 첫 링크만 씀
+          setlistMeta.set(song, { scoreUrl, videoUrl, memo: songPoom });
+        }
+        continue;
+      }
+
+      // 일반 DB 행은 곡/파트/담당자 필수
       if (!song || !part || !person) continue;
 
       out.push({
@@ -851,7 +907,8 @@
         personKey: norm(person),
       });
     }
-    return out;
+
+    return { dbRows: out, setlistMeta };
   }
 
   function toMetaMapWithHeaderRecovery(cols, rows){
@@ -926,27 +983,33 @@
     return a;
   }
 
+  // ✅ 악보/영상 링크: DB 셀에 "악보 G키 URL" 형식 지원 + 중복 URL 제거 + 라벨 표시
   function renderMediaForExactSong(exactRows){
     if (!exactRows || !exactRows.length){ hideMediaBox(); return; }
 
     const qn = norm(elQ.value);
     const meta = META.get(qn);
 
-    const scoreSet = new Set();
-    const videoSet = new Set();
+    const scoreMap = new Map(); // url -> label
+    const videoMap = new Map(); // url -> label
 
     exactRows.forEach(r => {
-      if (trim(r.scoreUrl)) scoreSet.add(trim(r.scoreUrl));
-      if (trim(r.videoUrl)) videoSet.add(trim(r.videoUrl));
+      parseSheetLinks(r.scoreUrl, "악보").forEach(x => scoreMap.set(x.url, x.label));
+      parseSheetLinks(r.videoUrl, "영상").forEach(x => videoMap.set(x.url, x.label));
     });
+
     if (meta){
-      if (trim(meta.scoreUrl)) scoreSet.add(trim(meta.scoreUrl));
-      if (trim(meta.linkUrl))  videoSet.add(trim(meta.linkUrl));
+      parseSheetLinks(meta.scoreUrl, "악보").forEach(x => scoreMap.set(x.url, x.label));
+      parseSheetLinks(meta.linkUrl,  "영상").forEach(x => videoMap.set(x.url, x.label));
     }
 
-    const scores = [...scoreSet];
-    const videos = [...videoSet];
-    LAST_MEDIA = { scores: new Set(scores), videos: new Set(videos) };
+    const scores = [...scoreMap.entries()]; // [url,label]
+    const videos = [...videoMap.entries()];
+
+    LAST_MEDIA = {
+      scores: new Set(scores.map(x => x[0])),
+      videos: new Set(videos.map(x => x[0]))
+    };
 
     if (!scores.length && !videos.length){ hideMediaBox(); return; }
 
@@ -955,8 +1018,8 @@
     if (scores.length){
       elScoreRow.style.display = "flex";
       elScoreLinks.innerHTML = "";
-      scores.slice(0, 6).forEach((u,i) => {
-        elScoreLinks.appendChild(makeLinkChip(u, scores.length === 1 ? "악보" : `악보 ${i+1}`));
+      scores.slice(0, 6).forEach(([u,label]) => {
+        elScoreLinks.appendChild(makeLinkChip(u, label || "악보"));
       });
     } else {
       elScoreRow.style.display = "none";
@@ -965,8 +1028,8 @@
     if (videos.length){
       elVideoRow.style.display = "flex";
       elVideoLinks.innerHTML = "";
-      videos.slice(0, 6).forEach((u,i) => {
-        elVideoLinks.appendChild(makeLinkChip(u, videos.length === 1 ? "영상" : `영상 ${i+1}`));
+      videos.slice(0, 6).forEach(([u,label]) => {
+        elVideoLinks.appendChild(makeLinkChip(u, label || "영상"));
       });
     } else {
       elVideoRow.style.display = "none";
@@ -1082,7 +1145,6 @@
       return;
     }
 
-    // 전체 보기
     if (!dates.length){
       elPoomByDate.innerHTML = `<div class="empty">송품이 아직 없어요.</div>`;
       return;
@@ -1097,13 +1159,12 @@
       return;
     }
 
-    // 곡이 바뀌면 날짜 선택 초기화
     if (POOM_STATE.lastSongKey !== qn){
       POOM_STATE.lastSongKey = qn;
       POOM_STATE.selectedDate = "__all__";
     }
 
-    const byDate = new Map(); // dateStr -> Set(notes)
+    const byDate = new Map();
     for (const r of exactRows){
       const poom = trim(r.songPoom);
       if (!poom) continue;
@@ -1114,7 +1175,6 @@
 
     const dates = poomSortDates(Array.from(byDate.keys()));
 
-    // META 공통(선택)
     const meta = META.get(qn);
     const commonBlocks = [];
     if (meta){
@@ -1128,11 +1188,9 @@
       return;
     }
 
-    // 상태 저장
     POOM_STATE.byDate = byDate;
     POOM_STATE.dates = dates;
 
-    // 선택된 날짜가 사라졌으면 전체로
     if (POOM_STATE.selectedDate !== "__all__" && !byDate.has(POOM_STATE.selectedDate)){
       POOM_STATE.selectedDate = "__all__";
     }
@@ -1140,10 +1198,13 @@
     elMetaBox.style.display = "block";
     elMetaSong.textContent = meta?.song || elQ.value;
 
-    // META 링크 버튼(미디어 박스에 이미 있으면 숨김)
+    // META 링크 버튼(미디어 박스에 이미 있으면 숨김) - URL만 비교
     if (meta){
-      const sUrl = trim(meta.scoreUrl);
-      const lUrl = trim(meta.linkUrl);
+      // META에도 여러 줄/라벨이 들어갈 수 있으니 첫 URL만 버튼에
+      const sLinks = parseSheetLinks(meta.scoreUrl, "악보");
+      const lLinks = parseSheetLinks(meta.linkUrl, "영상");
+      const sUrl = (sLinks[0]?.url || "").trim();
+      const lUrl = (lLinks[0]?.url || "").trim();
 
       if (sUrl && !LAST_MEDIA.scores.has(sUrl)){
         elMetaScoreBtn.href = sUrl;
@@ -1452,43 +1513,26 @@
     return out;
   }
 
-  // ✅ A열: 곡명, B열: 콘티악보URL(한 칸만 사용)
   async function loadSetlistFromSheet(sheetName){
     const sheetId = extractSheetId(FIXED_SHEET_URL);
     const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
-
-    const tq = encodeURIComponent("select A, B where A is not null or B is not null");
+    const tq = encodeURIComponent("select A where A is not null");
     const url = base + "&sheet=" + encodeURIComponent(sheetName) + "&tq=" + tq;
 
     const p = await loadGvizJSONP(url);
-    const rows = (p.rows || []);
+    const songs = (p.rows || []).map(r => trim(r[0] ?? "")).filter(Boolean);
 
-    // 콘티 악보 URL: B열에서 처음 나오는 값 1개만 사용
-    let scoreUrl = "";
-    for (const r of rows){
-      const b = trim(r[1] ?? "");
-      if (!b) continue;
-      const bn = norm(b);
-      if (bn === norm("콘티악보url") || bn === norm("악보url") || bn === norm("악보")) continue;
-      scoreUrl = b;
-      break;
-    }
-
-    // 곡 리스트: A열만
-    const songsRaw = rows.map(r => trim(r[0] ?? "")).filter(Boolean);
-    const cleaned = (songsRaw[0] && norm(songsRaw[0]) === norm("곡명")) ? songsRaw.slice(1) : songsRaw;
-    const songs = uniqSongs(cleaned);
-
-    return { songs, scoreUrl };
+    const cleaned = (songs[0] && norm(songs[0]) === norm("곡명")) ? songs.slice(1) : songs;
+    return uniqSongs(cleaned);
   }
 
   async function loadAllSetlists(){
     for (const def of SETLIST_TABS){
       try{
-        const data = await loadSetlistFromSheet(def.sheet);
-        SETLIST_CACHE.set(def.key, data); // { songs, scoreUrl }
+        const songs = await loadSetlistFromSheet(def.sheet);
+        SETLIST_CACHE.set(def.key, songs);
       } catch(e){
-        SETLIST_CACHE.set(def.key, { songs: [], scoreUrl: "" });
+        SETLIST_CACHE.set(def.key, []);
       }
     }
   }
@@ -1511,22 +1555,38 @@
     });
   }
 
+  function slEnsureSetScoreBtn(){
+    let btn = document.getElementById("slSetScoreBtn");
+    if (!btn){
+      btn = document.createElement("a");
+      btn.id = "slSetScoreBtn";
+      btn.className = "miniBtn";
+      btn.target = "_blank";
+      btn.rel = "noopener";
+      btn.style.display = "none";
+      btn.textContent = "콘티 악보";
+      elSlCopyBtn.parentNode.insertBefore(btn, elSlCopyBtn);
+    }
+    return btn;
+  }
+
   function slRenderList(){
     const def = SETLIST_TABS.find(d => d.key === activeSetlistKey);
-    const data = SETLIST_CACHE.get(activeSetlistKey) || { songs: [], scoreUrl: "" };
-    const arr = data.songs || [];
-    const scoreUrl = trim(data.scoreUrl || "");
+    const arr = SETLIST_CACHE.get(activeSetlistKey) || [];
 
     elSlTitle.textContent = def ? def.title : activeSetlistKey;
     elSlCount.textContent = String(arr.length);
 
-    // ✅ 콘티(리스트) 단위 악보 버튼
-    if (scoreUrl){
-      elSlScoreBtn.href = scoreUrl;
-      elSlScoreBtn.style.display = "inline-flex";
+    // ✅ DB 탭 SETLIST 메타에서 '콘티 악보' 링크 표시
+    const btn = slEnsureSetScoreBtn();
+    const meta = SETLIST_META.get(def?.sheet || "");
+    const firstScore = meta ? parseSheetLinks(meta.scoreUrl, "콘티 악보")[0] : null;
+    if (firstScore && trim(firstScore.url)){
+      btn.href = trim(firstScore.url);
+      btn.textContent = firstScore.label || "콘티 악보";
+      btn.style.display = "inline-block";
     } else {
-      elSlScoreBtn.style.display = "none";
-      elSlScoreBtn.href = "#";
+      btn.style.display = "none";
     }
 
     elSlBody.innerHTML = "";
@@ -1551,14 +1611,8 @@
 
   elSlCopyBtn.addEventListener("click", async () => {
     const def = SETLIST_TABS.find(d => d.key === activeSetlistKey);
-    const data = SETLIST_CACHE.get(activeSetlistKey) || { songs: [], scoreUrl: "" };
-    const a = data.songs || [];
-    const scoreUrl = trim(data.scoreUrl || "");
-
-    const lines = [(def ? def.title : activeSetlistKey)];
-    if (scoreUrl) lines.push("콘티 악보: " + scoreUrl);
-    lines.push(...a.map((s,i) => `${i+1}. ${s}`));
-    const text = lines.join("\n");
+    const a = SETLIST_CACHE.get(activeSetlistKey) || [];
+    const text = [(def ? def.title : activeSetlistKey), ...a.map((s,i) => `${i+1}. ${s}`)].join("\n");
 
     try{
       await navigator.clipboard.writeText(text);
@@ -1638,10 +1692,14 @@
     try{
       try{
         const p1 = await loadGvizJSONP(urlBySheet);
-        DB = toDBWithHeaderRecovery(p1.cols, p1.rows);
+        const parsed = toDBWithHeaderRecovery(p1.cols, p1.rows);
+        DB = parsed.dbRows;
+        SETLIST_META = parsed.setlistMeta;
       } catch(e1){
         const p2 = await loadGvizJSONP(urlByGid);
-        DB = toDBWithHeaderRecovery(p2.cols, p2.rows);
+        const parsed2 = toDBWithHeaderRecovery(p2.cols, p2.rows);
+        DB = parsed2.dbRows;
+        SETLIST_META = parsed2.setlistMeta;
       }
 
       rebuildSongs();
