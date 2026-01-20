@@ -182,7 +182,15 @@
       max-height: 420px;
       overflow:auto;
       scroll-behavior:smooth;
+
+      /* 모바일 터치/스크롤 최적화 + 하단 nav 겹침 방지 */
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 96px;
     }
+    @media (min-width:900px){
+      .list .body{ padding-bottom: 0; }
+    }
+
     .item{
       padding:10px 12px;
       border-bottom:1px solid rgba(17,24,39,.10);
@@ -256,6 +264,13 @@
     .mediaLabel{ font-size:12px; color:var(--muted); min-width:44px; padding-top:2px; }
     .mediaLinks{ display:flex; gap:6px; flex-wrap:wrap; }
     a.chipLink{ text-decoration:none; }
+
+    /* 링크 칩 터치 안정화 */
+    .mediaLinks a.chipLink{
+      display:inline-flex;
+      align-items:center;
+      touch-action: manipulation;
+    }
 
     .filterRow{
       display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
@@ -679,19 +694,43 @@
     }).format(new Date(ts));
   }
 
+  // ✅ FIX: 날짜 정규화 (GVIZ Date(), "YYYY,MM,DD" 등)
   function normDateStr(d){
     const s = trim((d ?? "").toString());
     if (!s) return "";
 
+    // 1) GVIZ date: Date(2026,1,1)  (month is 0-based)
     let m = s.match(/Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/i);
-    if (!m) m = s.match(/^(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/);
     if (m){
-      const y = m[1];
-      const mm = String(parseInt(m[2],10)+1).padStart(2,"0");
-      const dd = String(parseInt(m[3],10)).padStart(2,"0");
-      return `${y}-${mm}-${dd}`;
+      const y = parseInt(m[1], 10);
+      const mm0 = parseInt(m[2], 10); // 0-based
+      const dd = parseInt(m[3], 10);
+      const mm = String(mm0 + 1).padStart(2, "0");
+      const d2 = String(dd).padStart(2, "0");
+      return `${y}-${mm}-${d2}`;
     }
 
+    // 2) GVIZ sometimes returns: 2026, 1, 1 (often 0-based month) or with extra time parts
+    m = s.match(/(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/);
+    if (m){
+      const y = parseInt(m[1], 10);
+      const rawM = parseInt(m[2], 10);
+      const dd = parseInt(m[3], 10);
+
+      // heuristic:
+      // - if month is 0..11 => treat as 0-based (GVIZ style)
+      // - if month is 1..12 => treat as 1-based (already normal)
+      const month =
+        (rawM >= 0 && rawM <= 11) ? (rawM + 1) :
+        (rawM >= 1 && rawM <= 12) ? rawM :
+        rawM;
+
+      const mm = String(month).padStart(2, "0");
+      const d2 = String(dd).padStart(2, "0");
+      return `${y}-${mm}-${d2}`;
+    }
+
+    // 3) common formats: 2026-2-1 / 2026.02.01 / 2026/02/01
     m = s.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
     if (m){
       const y = m[1];
@@ -700,7 +739,9 @@
       return `${y}-${mm}-${dd}`;
     }
 
+    // 4) already normalized
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
     return s;
   }
 
@@ -1876,7 +1917,7 @@
       title: trim(r[0] ?? ""),
       body:  trim(r[1] ?? ""),
       link:  trim(r[2] ?? ""),
-      date:  trim(r[3] ?? ""),
+      date:  normDateStr(r[3] ?? ""),   // ✅ FIX
     })).filter(x => x.title || x.body);
 
     if (list[0] && norm(list[0].title) === norm("제목") && norm(list[0].body) === norm("내용")){
