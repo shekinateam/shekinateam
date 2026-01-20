@@ -1,43 +1,157 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
   <title>쉐키나 찬양팀 곡 검색</title>
+
   <style>
     :root{
-      --bd:#e5e7eb; --fg:#111827; --muted:#6b7280; --bg:#ffffff;
-      --chip:#f3f4f6; --warn:#991b1b; --ok:#065f46;
-      --shadow: 0 10px 30px rgba(17,24,39,.08);
+      --bg0:#0b1020;
+      --bg1:#0f1733;
+      --card:#ffffff;
+      --fg:#111827;
+      --muted:#6b7280;
+      --bd:rgba(17,24,39,.10);
+      --shadow: 0 12px 45px rgba(0,0,0,.18);
+      --shadow2: 0 10px 30px rgba(17,24,39,.08);
+      --radius:18px;
+      --chip:#f3f4f6;
+      --ok:#065f46;
+      --warn:#991b1b;
+      --accent:#7aa2ff;
+      --accent2:#8ef0d0;
     }
     *{ box-sizing:border-box; }
+    html,body{ height:100%; }
     body{
-      margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
-      background:var(--bg); color:var(--fg);
+      margin:0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      color:var(--fg);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(122,162,255,.22), transparent 60%),
+        radial-gradient(1000px 700px at 95% 10%, rgba(142,240,208,.18), transparent 55%),
+        linear-gradient(160deg, var(--bg0), var(--bg1));
+      padding-bottom: calc(76px + env(safe-area-inset-bottom));
     }
-    .wrap{ max-width:1080px; margin:0 auto; padding:22px; }
-    h1{ font-size:20px; margin:0 0 6px; letter-spacing:-.2px; }
-    .sub{ color:var(--muted); font-size:13px; margin-bottom:14px; line-height:1.55; }
-    .muted{ color:var(--muted); font-size:12px; }
 
-    .card{
-      border:1px solid var(--bd); border-radius:16px; padding:14px; margin:12px 0;
-      box-shadow:var(--shadow); background:#fff;
+    /* ===== layout ===== */
+    .wrap{ max-width:1080px; margin:0 auto; padding:18px 16px; }
+    @media (min-width:900px){ .wrap{ padding:22px; } }
+
+    /* top bar */
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      background: linear-gradient(180deg, rgba(11,16,32,.92), rgba(11,16,32,.45), transparent);
+      backdrop-filter: blur(10px);
+      padding: calc(10px + env(safe-area-inset-top)) 0 12px;
     }
+    .topbarInner{
+      max-width:1080px; margin:0 auto; padding:0 16px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .brand{
+      display:flex; flex-direction:column; gap:2px;
+      color:#e8ecff;
+    }
+    .brandTitle{
+      font-weight:900; letter-spacing:-.3px;
+      font-size:16px;
+    }
+    .brandSub{
+      font-size:12px; color:rgba(232,236,255,.75);
+      line-height:1.35;
+    }
+    .topStatus{
+      display:flex; align-items:center; gap:8px;
+      color:rgba(232,236,255,.92);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(232,236,255,.55);
+      box-shadow: 0 0 0 4px rgba(232,236,255,.10);
+    }
+
+    /* cards */
+    .card{
+      background: var(--card);
+      border:1px solid var(--bd);
+      border-radius: var(--radius);
+      padding:14px;
+      box-shadow: var(--shadow);
+      margin: 12px 0;
+    }
+    .muted{ color:var(--muted); font-size:12px; }
+    .hint{ font-size:12px; color:var(--muted); line-height:1.55; }
     label{ font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
+    .chip{
+      font-size:12px;
+      background:var(--chip);
+      padding:3px 9px;
+      border-radius:999px;
+      color:#374151;
+      border:1px solid transparent;
+      white-space:nowrap;
+    }
+    .chip.ok{ background: rgba(220,252,231,.9); color:var(--ok); }
+    .chip.warn{ background: rgba(254,226,226,.9); color:var(--warn); }
+
+    /* buttons */
+    .miniBtn, .btn, .clearBtn{
+      border:1px solid rgba(17,24,39,.14);
+      background:#fff;
+      border-radius:12px;
+      padding:8px 12px;
+      font-size:12px;
+      cursor:pointer;
+      text-decoration:none;
+      color:var(--fg);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .miniBtn:hover, .btn:hover, .clearBtn:hover{ background:#fafafa; }
+    .miniBtn.active{
+      border-color: rgba(122,162,255,.55);
+      box-shadow: 0 0 0 4px rgba(122,162,255,.18);
+      font-weight:900;
+    }
+
+    /* inputs */
     .searchWrap{ position:relative; }
     input[type="text"]{
-      width:100%; padding:12px 44px 12px 12px; border:1px solid var(--bd); border-radius:12px;
-      font-size:15px; outline:none; transition:border-color .15s ease, box-shadow .15s ease;
+      width:100%;
+      padding:12px 46px 12px 12px;
+      border:1px solid rgba(17,24,39,.14);
+      border-radius:14px;
+      font-size:15px;
+      outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease;
+      background:#fff;
     }
-    input[type="text"]:focus{ border-color:#cbd5e1; box-shadow:0 0 0 4px rgba(148,163,184,.25); }
+    input[type="text"]:focus{
+      border-color: rgba(122,162,255,.65);
+      box-shadow: 0 0 0 4px rgba(122,162,255,.18);
+    }
     .clearBtn{
       position:absolute; right:8px; top:50%; transform:translateY(-50%);
-      border:1px solid var(--bd); background:#fff; border-radius:10px;
-      padding:6px 10px; font-size:12px; cursor:pointer;
+      padding:7px 10px;
+      border-radius:12px;
     }
-    .clearBtn:hover{ background:#fafafa; }
-    .hint{ font-size:12px; color:var(--muted); margin-top:8px; line-height:1.5; }
-    .status{ font-size:12px; white-space:pre-wrap; margin-top:10px; display:flex; align-items:center; gap:8px; }
+
+    /* status */
+    .status{
+      font-size:12px;
+      white-space:pre-wrap;
+      margin-top:10px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
     .status.ok{ color:var(--ok); }
     .status.bad{ color:var(--warn); }
     .spin{
@@ -50,56 +164,84 @@
     .status.loading .spin{ display:inline-block; }
     @keyframes spin{ to{ transform:rotate(360deg); } }
 
+    /* grid / lists */
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
 
     .list{
-      border:1px solid var(--bd); border-radius:14px; overflow:hidden; background:#fff;
-      box-shadow:var(--shadow);
+      border:1px solid rgba(17,24,39,.10);
+      border-radius:16px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow: var(--shadow2);
     }
     .list .head{
-      padding:10px 12px; background:#fafafa; border-bottom:1px solid var(--bd);
-      font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 12px;
+      background:#fafafa;
+      border-bottom:1px solid rgba(17,24,39,.10);
+      font-weight:900;
+      font-size:13px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
     }
-    .list .body{ max-height:420px; overflow:auto; scroll-behavior:smooth; }
+    .list .body{
+      max-height: 420px;
+      overflow:auto;
+      scroll-behavior:smooth;
+    }
     .item{
-      padding:10px 12px; border-bottom:1px solid var(--bd); font-size:14px;
-      display:flex; justify-content:space-between; gap:10px; cursor:pointer;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(17,24,39,.10);
+      font-size:14px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      cursor:pointer;
       transition:background .12s ease;
+      background:#fff;
     }
     .item:hover{ background:#fafafa; }
     .item:last-child{ border-bottom:0; }
-    .chip{
-      font-size:12px; background:var(--chip); padding:2px 8px; border-radius:999px;
-      color:#374151; white-space:nowrap; border:1px solid transparent;
-    }
-    .chip.warn{ background: rgba(254,226,226,.9); color:#7f1d1d; }
-    .chip.ok{ background: rgba(220,252,231,.9); color:#065f46; }
-
     .empty{ color:var(--muted); font-size:13px; padding:12px; }
 
     table{ width:100%; border-collapse:collapse; }
-    th, td{ border-bottom:1px solid var(--bd); padding:10px 10px; text-align:left; font-size:14px; }
-    th{ font-size:13px; color:#374151; background:#fafafa; position:sticky; top:0; z-index:1; }
+    th, td{ border-bottom:1px solid rgba(17,24,39,.10); padding:10px 10px; text-align:left; font-size:14px; }
+    th{
+      font-size:13px; color:#374151; background:#fafafa;
+      position:sticky; top:0; z-index:1;
+    }
 
-    /* 자동완성 */
+    /* autocomplete */
     .ac{
       position:absolute; left:0; right:0; top:calc(100% + 8px);
-      border:1px solid var(--bd); border-radius:14px; overflow:hidden; background:#fff;
-      box-shadow:var(--shadow);
+      border:1px solid rgba(17,24,39,.10);
+      border-radius:16px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow: var(--shadow2);
       display:none;
       z-index:10;
     }
     .acHead{
-      padding:8px 10px; background:#fafafa; border-bottom:1px solid var(--bd);
-      display:flex; justify-content:space-between; align-items:center; gap:10px;
-      font-size:12px; color:#374151;
+      padding:8px 10px;
+      background:#fafafa;
+      border-bottom:1px solid rgba(17,24,39,.10);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      font-size:12px;
+      color:#374151;
     }
     .acBody{ max-height:260px; overflow:auto; }
     .acRow{
-      padding:10px 12px; border-bottom:1px solid var(--bd);
+      padding:10px 12px;
+      border-bottom:1px solid rgba(17,24,39,.10);
       display:flex; justify-content:space-between; gap:10px;
       cursor:pointer; font-size:14px;
+      background:#fff;
     }
     .acRow:last-child{ border-bottom:0; }
     .acRow:hover, .acRow.active{ background:#f9fafb; }
@@ -109,58 +251,45 @@
       border-radius:4px;
     }
 
-    /* 담당자 링크/패널 */
+    /* person link/panel */
     .personLink{ text-decoration:underline; cursor:pointer; color:#1f2937; }
     .personLink:hover{ color:#111827; }
-    .panelHead{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-    .panelTitle{ font-weight:800; }
+    .panelHead{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+    .panelTitle{ font-weight:900; }
     .panelMeta{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .miniBtn{
-      border:1px solid var(--bd); background:#fff; border-radius:10px;
-      padding:6px 10px; font-size:12px; cursor:pointer; text-decoration:none; color:var(--fg);
-      display:inline-flex; align-items:center;
-    }
-    .miniBtn:hover{ background:#fafafa; }
-    .miniBtn.active{ border-color:#cbd5e1; box-shadow:0 0 0 4px rgba(148,163,184,.18); font-weight:800; }
 
-    /* 날짜 칩 */
+    /* date chips */
     .dateChips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
     .dateChip{ font-size:12px; }
 
-    /* 곡 자료(악보/영상) */
-    .mediaBox{ border-top:1px solid var(--bd); padding:12px; background:#fff; }
+    /* media box */
+    .mediaBox{ border-top:1px solid rgba(17,24,39,.10); padding:12px; background:#fff; }
     .mediaRow{ display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; margin-top:8px; }
     .mediaLabel{ font-size:12px; color:var(--muted); min-width:44px; padding-top:2px; }
     .mediaLinks{ display:flex; gap:6px; flex-wrap:wrap; }
     a.chipLink{ text-decoration:none; }
-    .btn{
-      border:1px solid var(--bd); background:#fff; border-radius:10px;
-      padding:6px 10px; font-size:12px; cursor:pointer;
-    }
-    .btn:hover{ background:#fafafa; }
 
-    /* 필터 바 */
+    /* filter bar */
     .filterRow{
       display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
     }
-    .filterLeft{
-      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
-    }
-    .filterRight{
-      display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end;
-    }
+    .filterLeft{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .filterRight{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
     select{
-      border:1px solid var(--bd);
-      border-radius:10px;
-      padding:6px 10px;
+      border:1px solid rgba(17,24,39,.14);
+      border-radius:12px;
+      padding:8px 10px;
       font-size:12px;
       background:#fff;
       cursor:pointer;
       outline:none;
     }
-    select:focus{ border-color:#cbd5e1; box-shadow:0 0 0 4px rgba(148,163,184,.18); }
+    select:focus{
+      border-color: rgba(122,162,255,.65);
+      box-shadow: 0 0 0 4px rgba(122,162,255,.18);
+    }
 
-    /* ✅ 송품 */
+    /* poom */
     .poomWrap{ margin-top:10px; }
     .poomDateRow{ display:flex; align-items:center; gap:8px; margin-top:12px; }
     .poomDateRow:first-child{ margin-top:6px; }
@@ -168,9 +297,9 @@
     .poomLine{ margin-top:6px; line-height:1.6; }
     .poomTag{
       font-weight:900;
-      padding:1px 6px;
+      padding:1px 7px;
       border-radius:999px;
-      border:1px solid var(--bd);
+      border:1px solid rgba(17,24,39,.14);
       background:#fafafa;
       margin-right:6px;
       display:inline-block;
@@ -181,212 +310,372 @@
     .poomTag.inst{ border-color: rgba(17,24,39,.20); }
     .poomText{ vertical-align:middle; }
 
-    /* ✅ 날짜 칩 클릭(필터) */
+    /* date chip buttons (filter) */
     .chipBtn{
       cursor:pointer;
-      border-color: var(--bd);
+      border-color: rgba(17,24,39,.14);
       background:#fff;
     }
     .chipBtn:hover{ background:#fafafa; }
     .chipBtn.active{
-      border-color:#cbd5e1;
-      box-shadow:0 0 0 4px rgba(148,163,184,.18);
+      border-color: rgba(122,162,255,.55);
+      box-shadow: 0 0 0 4px rgba(122,162,255,.18);
       font-weight:900;
       background:#fff;
     }
+
+    /* views */
+    .view{ display:none; }
+    .view.active{ display:block; }
+
+    /* bottom nav */
+    .nav{
+      position:fixed; left:0; right:0; bottom:0;
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      background: rgba(11,16,32,.86);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(232,236,255,.12);
+      z-index:60;
+    }
+    .navInner{
+      max-width:1080px; margin:0 auto;
+      display:flex; gap:10px; justify-content:space-between;
+    }
+    .navBtn{
+      flex:1;
+      border:1px solid rgba(232,236,255,.18);
+      background: rgba(255,255,255,.06);
+      color: rgba(232,236,255,.92);
+      border-radius:16px;
+      padding:10px 10px;
+      font-size:12px;
+      font-weight:800;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      -webkit-tap-highlight-color: transparent;
+      user-select:none;
+    }
+    .navBtn.active{
+      background: rgba(122,162,255,.20);
+      border-color: rgba(122,162,255,.45);
+      box-shadow: 0 0 0 4px rgba(122,162,255,.14);
+    }
+
+    /* modal (공지) */
+    .modalDim{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.50);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      z-index:100;
+      padding: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    .modalDim.show{ display:flex; }
+    .modal{
+      width:100%;
+      max-width:720px;
+      background:#fff;
+      border-radius: 22px;
+      border:1px solid rgba(17,24,39,.10);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .modalHead{
+      padding:14px 14px;
+      background:#fafafa;
+      border-bottom:1px solid rgba(17,24,39,.10);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .modalTitle{ font-weight:900; font-size:14px; }
+    .modalBody{
+      padding:14px;
+      font-size:14px;
+      line-height:1.65;
+      white-space:pre-wrap;
+    }
+    .modalActions{
+      padding:12px 14px;
+      border-top:1px solid rgba(17,24,39,.10);
+      display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;
+      background:#fff;
+    }
+
+    /* small helpers */
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .divider{ height:1px; background: rgba(17,24,39,.10); margin:10px 0; }
   </style>
 </head>
+
 <body>
+  <!-- ===== TOP BAR ===== -->
+  <div class="topbar">
+    <div class="topbarInner">
+      <div class="brand">
+        <div class="brandTitle">쉐키나 찬양팀</div>
+        <div class="brandSub">곡 검색 · 콘티 · 공지</div>
+      </div>
+      <div class="topStatus">
+        <span class="dot" id="topDot"></span>
+        <span id="topStatusText">연결 대기</span>
+      </div>
+    </div>
+  </div>
+
   <div class="wrap">
-    <h1>쉐키나 찬양팀 곡 검색</h1>
-    <div class="sub">
-      곡명 검색하면 해당 곡 세션(파트/담당자)이 전부 나옵니다. <b>띄어쓰기 무시</b> / <b>중복 제거</b><br/>
-      추천 곡명은 항상 보이고, 오른쪽 결과표는 <b>검색어 입력했을 때만</b> 뜹니다.
-    </div>
+    <!-- ===== VIEW 1: 곡 검색 ===== -->
+    <section id="viewSearch" class="view active">
+      <div class="card">
+        <label>곡명 검색</label>
 
-    <div class="card">
-      <label>곡명 검색</label>
+        <div class="searchWrap">
+          <input id="q" type="text" placeholder="곡명 검색 (예: 꽃들 / 주님 사랑 등)" autocomplete="off" />
+          <button id="clear" class="clearBtn" type="button" title="지우기">지우기</button>
 
-      <div class="searchWrap">
-        <input id="q" type="text" placeholder="곡명 검색 (예: 꽃들 / 주님 사랑 등)" autocomplete="off" />
-        <button id="clear" class="clearBtn" type="button" title="지우기">지우기</button>
-
-        <div id="ac" class="ac" aria-hidden="true">
-          <div class="acHead">
-            <span>검색 후보</span>
-            <span id="acMeta" class="chip">0</span>
-          </div>
-          <div id="acBody" class="acBody"></div>
-        </div>
-      </div>
-
-      <div class="hint">
-        • 타이핑하면 후보가 뜹니다 (↑↓, Enter 가능) • 추천 곡명 클릭해도 됨
-      </div>
-
-      <div id="status" class="status">
-        <span class="spin" aria-hidden="true"></span>
-        <span id="statusText"></span>
-      </div>
-    </div>
-
-    <!-- ✅ 곡 목록 필터 -->
-    <div class="card" id="filterCard">
-      <div class="panelHead">
-        <div>
-          <div class="panelTitle">곡 목록 필터</div>
-          <div class="hint" style="margin:6px 0 0;">
-            최근에 불렀던 곡 흐름도 참고하시고 <b>주일·수련회 콘티도 함께 확인하실 수 있으니 편하게 사용해 주세요</b><br/>
-            <b>오늘 하루도 주님 안에서 힘내시길 바랍니다.</b>
-          </div>
-        </div>
-        <span class="chip" id="filterCount">0</span>
-      </div>
-
-      <div class="filterRow" style="margin-top:10px;">
-        <div class="filterLeft">
-          <button class="miniBtn" id="modeRecent" type="button">최근 부른 곡</button>
-          <button class="miniBtn" id="modeFrequent" type="button">최근 자주 부른 곡</button>
-          <button class="miniBtn" id="modeOld" type="button">오래 안 한 곡</button>
-
-          <span class="chip" id="weeksChip">12주</span>
-
-          <select id="weeksSel" title="기간(주)">
-            <option value="4">4주</option>
-            <option value="8">8주</option>
-            <option value="12" selected>12주</option>
-            <option value="24">24주</option>
-            <option value="52">52주</option>
-          </select>
-
-          <select id="sortSel" title="정렬">
-            <option value="default" selected>기본 정렬</option>
-            <option value="az">가나다</option>
-          </select>
-
-          <button class="miniBtn" id="filterReset" type="button">초기화</button>
-        </div>
-
-        <div class="filterRight">
-          <span class="chip" id="noDateChip" title="현재 목록 중 날짜가 없는 곡 수">날짜없음 0</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="list">
-        <div class="head"><span id="songListTitle">곡 목록</span><span class="chip" id="songCount">0</span></div>
-        <div class="body" id="songs"></div>
-      </div>
-
-      <div class="list">
-        <div class="head">검색 결과 (파트 / 담당자)</div>
-        <div class="body">
-          <div class="empty" style="padding:10px 12px; border-bottom:1px solid var(--bd); background:#fff;">
-            팁: <b>담당자 이름 클릭</b>하면 그 사람이 해본 곡 목록이 뜹니다.
-          </div>
-
-          <div id="resultsEmpty" class="empty">검색어를 입력하면 결과가 나와요.</div>
-
-          <table id="resultsTable" style="display:none;">
-            <thead>
-              <tr><th style="width:40%;">파트</th><th>담당자</th></tr>
-            </thead>
-            <tbody id="results"></tbody>
-          </table>
-
-          <div id="mediaBox" class="mediaBox" style="display:none;">
-            <div style="font-weight:800; margin-bottom:2px;">곡 자료</div>
-            <div class="hint" style="margin-top:4px;">악보/영상 링크가 있으면 여기 표시됩니다.</div>
-
-            <div class="mediaRow" id="scoreRow" style="display:none;">
-              <div class="mediaLabel">악보</div>
-              <div class="mediaLinks" id="scoreLinks"></div>
+          <div id="ac" class="ac" aria-hidden="true">
+            <div class="acHead">
+              <span>검색 후보</span>
+              <span id="acMeta" class="chip">0</span>
             </div>
+            <div id="acBody" class="acBody"></div>
+          </div>
+        </div>
 
-            <div class="mediaRow" id="videoRow" style="display:none;">
-              <div class="mediaLabel">영상</div>
-              <div class="mediaLinks" id="videoLinks"></div>
+        <div class="hint" style="margin-top:10px;">
+          띄어쓰기 무시 / 중복 제거 · ↑↓, Enter 가능 · 담당자 이름 클릭하면 그 사람 참여곡이 나옵니다.
+        </div>
+
+        <div id="status" class="status">
+          <span class="spin" aria-hidden="true"></span>
+          <span id="statusText"></span>
+        </div>
+      </div>
+
+      <!-- ✅ 곡 목록 필터 (절대 삭제 X) -->
+      <div class="card" id="filterCard">
+        <div class="panelHead">
+          <div>
+            <div class="panelTitle">곡 목록 필터</div>
+            <div class="hint" style="margin:6px 0 0;">
+              기간(주) 바꿔서 “최근 들은곡 / 안들은곡” 정리할 때 쓰면 편합니다.
             </div>
           </div>
+          <span class="chip" id="filterCount">0</span>
+        </div>
 
-          <!-- ✅ 송품(날짜 클릭 가능) -->
-          <div id="metaBox" style="display:none; border-top:1px solid var(--bd); padding:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-              <div>
-                <div style="font-weight:900; margin-bottom:4px;">송품</div>
-                <div class="muted" id="metaSong"></div>
+        <div class="filterRow" style="margin-top:10px;">
+          <div class="filterLeft">
+            <button class="miniBtn" id="modeRecent" type="button">최근 들은곡</button>
+            <button class="miniBtn" id="modeFrequent" type="button">자주</button>
+            <button class="miniBtn" id="modeOld" type="button">안들은곡</button>
+
+            <span class="chip" id="weeksChip">12주</span>
+
+            <select id="weeksSel" title="기간(주)">
+              <option value="4">4주</option>
+              <option value="8">8주</option>
+              <option value="12" selected>12주</option>
+              <option value="24">24주</option>
+              <option value="52">52주</option>
+            </select>
+
+            <select id="sortSel" title="정렬">
+              <option value="default" selected>기본 정렬</option>
+              <option value="az">가나다</option>
+            </select>
+
+            <button class="miniBtn" id="filterReset" type="button">초기화</button>
+          </div>
+
+          <div class="filterRight">
+            <span class="chip" id="noDateChip" title="현재 목록 중 날짜가 없는 곡 수" style="display:none;">날짜없음 0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="list">
+          <div class="head">
+            <span id="songListTitle">곡 목록</span>
+            <span class="chip" id="songCount">0</span>
+          </div>
+          <div class="body" id="songs"></div>
+        </div>
+
+        <div class="list">
+          <div class="head">검색 결과 (파트 / 담당자)</div>
+          <div class="body">
+            <div class="empty" style="padding:10px 12px; border-bottom:1px solid rgba(17,24,39,.10); background:#fff;">
+              팁: <b>담당자 이름 클릭</b>하면 그 사람이 해본 곡 목록이 뜹니다.
+            </div>
+
+            <div id="resultsEmpty" class="empty">검색어를 입력하면 결과가 나와요.</div>
+
+            <table id="resultsTable" style="display:none;">
+              <thead>
+                <tr><th style="width:40%;">파트</th><th>담당자</th></tr>
+              </thead>
+              <tbody id="results"></tbody>
+            </table>
+
+            <div id="mediaBox" class="mediaBox" style="display:none;">
+              <div style="font-weight:900; margin-bottom:2px;">곡 자료</div>
+              <div class="hint" style="margin-top:4px;">악보/영상 링크가 있으면 여기 표시됩니다.</div>
+
+              <div class="mediaRow" id="scoreRow" style="display:none;">
+                <div class="mediaLabel">악보</div>
+                <div class="mediaLinks" id="scoreLinks"></div>
               </div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <a id="metaScoreBtn" class="btn" href="#" target="_blank" rel="noopener" style="display:none; text-decoration:none;">악보</a>
-                <a id="metaLinkBtn" class="btn" href="#" target="_blank" rel="noopener" style="display:none; text-decoration:none;">링크</a>
+
+              <div class="mediaRow" id="videoRow" style="display:none;">
+                <div class="mediaLabel">영상</div>
+                <div class="mediaLinks" id="videoLinks"></div>
               </div>
             </div>
 
-            <!-- 날짜 탭(클릭 필터) -->
-            <div id="poomDateTabs" class="dateChips" style="margin-top:10px;"></div>
+            <!-- ✅ 송품(날짜 클릭 가능) -->
+            <div id="metaBox" style="display:none; border-top:1px solid rgba(17,24,39,.10); padding:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                <div>
+                  <div style="font-weight:900; margin-bottom:4px;">송품</div>
+                  <div class="muted" id="metaSong"></div>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <a id="metaScoreBtn" class="btn" href="#" target="_blank" rel="noopener" style="display:none; text-decoration:none;">악보</a>
+                  <a id="metaLinkBtn" class="btn" href="#" target="_blank" rel="noopener" style="display:none; text-decoration:none;">링크</a>
+                </div>
+              </div>
 
-            <!-- 날짜별 내용 -->
-            <div id="poomByDate" class="poomWrap"></div>
-
-            <!-- META 공통(선택) -->
-            <div id="poomCommon" class="hint" style="margin-top:10px; white-space:pre-wrap;"></div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== 콘티 리스트(구글시트 탭) ===== -->
-    <div class="card" id="setlistsCard">
-      <div class="panelHead">
-        <div>
-          <div class="panelTitle">콘티 리스트</div>
-          <div class="hint" style="margin:6px 0 0;">
-            오늘 하루도 화이팅!
+              <div id="poomDateTabs" class="dateChips" style="margin-top:10px;"></div>
+              <div id="poomByDate" class="poomWrap"></div>
+              <div id="poomCommon" class="hint" style="margin-top:10px; white-space:pre-wrap;"></div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="hint" style="margin-top:10px; font-weight:700;">리스트 선택</div>
-      <div id="slTabs" class="dateChips" style="margin-top:8px;"></div>
-
-      <div class="list" style="margin-top:12px;">
-        <div class="head">
-          <span id="slTitle">-</span>
-          <span class="chip" id="slCount">0</span>
+      <div id="personPanel" class="card" style="display:none;">
+        <div class="panelHead">
+          <div>
+            <div class="panelTitle"><span id="ppName"></span> · 참여 기록</div>
+            <div class="hint" style="margin:6px 0 0;">아래 곡 클릭하면 검색창에 자동 입력됩니다.</div>
+          </div>
+          <div class="panelMeta">
+            <span class="chip" id="ppSongCount">0곡</span>
+            <button class="miniBtn" id="ppClose" type="button">닫기</button>
+          </div>
         </div>
-        <div class="body" id="slBody" style="max-height:360px;"></div>
-      </div>
 
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
-        <!-- ✅ 콘티 탭(B1)에 URL 1개 넣으면 여기 버튼으로 뜸 -->
-        <a class="miniBtn" id="slScoreBtn" href="#" target="_blank" rel="noopener" style="display:none; text-decoration:none;">콘티 악보</a>
-        <button class="miniBtn" id="slCopyBtn" type="button">복사</button>
-        <button class="miniBtn" id="slReloadBtn" type="button">새로고침</button>
+        <div class="list" style="margin-top:10px;">
+          <div class="head"><span>해본 곡 목록</span><span class="chip" id="ppRowCount">0행</span></div>
+          <div class="body" id="ppBody"></div>
+        </div>
       </div>
+    </section>
+
+    <!-- ===== VIEW 2: 콘티 ===== -->
+    <section id="viewSetlists" class="view">
+      <div class="card" id="setlistsCard">
+        <div class="panelHead">
+          <div>
+            <div class="panelTitle">콘티 리스트</div>
+            <div class="hint" style="margin:6px 0 0;">
+              탭 선택 → 곡 클릭하면 바로 검색으로 이어집니다.
+            </div>
+          </div>
+          <span class="chip" id="slBadge">-</span>
+        </div>
+
+        <div class="hint" style="margin-top:10px; font-weight:900;">리스트 선택</div>
+        <div id="slTabs" class="dateChips" style="margin-top:8px;"></div>
+
+        <div class="list" style="margin-top:12px;">
+          <div class="head">
+            <span id="slTitle">-</span>
+            <span class="chip" id="slCount">0</span>
+          </div>
+          <div class="body" id="slBody" style="max-height:520px;"></div>
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+          <a class="miniBtn" id="slScoreBtn" href="#" target="_blank" rel="noopener" style="display:none; text-decoration:none;">콘티 악보</a>
+          <button class="miniBtn" id="slCopyBtn" type="button">복사</button>
+          <button class="miniBtn" id="slReloadBtn" type="button">새로고침</button>
+        </div>
+
+        <div class="divider"></div>
+        <div class="hint">
+          • 시트 탭 A열: 곡명 / B열(B1 포함): 콘티 악보 링크(원하면) 넣으면 버튼으로 뜹니다.
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== VIEW 3: 공지 ===== -->
+    <section id="viewNotice" class="view">
+      <div class="card">
+        <div class="panelHead">
+          <div>
+            <div class="panelTitle">공지사항</div>
+            <div class="hint" style="margin:6px 0 0;">버튼으로 필요한 것만 탁 보이게 해놨어요.</div>
+          </div>
+          <span class="chip" id="noticeCount">0</span>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div class="filterLeft">
+            <button class="miniBtn" id="noticeReload" type="button">새로고침</button>
+          </div>
+          <div class="filterRight">
+            <span class="chip" id="noticeSourceChip">시트 연동</span>
+          </div>
+        </div>
+
+        <div class="list" style="margin-top:12px;">
+          <div class="head">
+            <span>공지 목록</span>
+            <span class="chip" id="noticeChip">-</span>
+          </div>
+          <div class="body" id="noticeBody" style="max-height:620px;"></div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="hint">
+          • 시트에 “공지사항” 탭을 만들면 자동으로 읽습니다. (A:제목 / B:내용 / C:링크(선택) / D:날짜(선택))
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===== BOTTOM NAV ===== -->
+  <div class="nav">
+    <div class="navInner">
+      <button class="navBtn active" id="navSearch" type="button">곡 검색</button>
+      <button class="navBtn" id="navSetlists" type="button">콘티</button>
+      <button class="navBtn" id="navNotice" type="button">공지</button>
     </div>
+  </div>
 
-    <div id="personPanel" class="card" style="display:none;">
-      <div class="panelHead">
+  <!-- ===== 공지 모달 ===== -->
+  <div class="modalDim" id="noticeModalDim" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="noticeModalTitle">
+      <div class="modalHead">
         <div>
-          <div class="panelTitle"><span id="ppName"></span> · 참여 기록</div>
-          <div class="hint" style="margin:6px 0 0;">아래 곡 클릭하면 검색창에 자동 입력됩니다.</div>
+          <div class="modalTitle" id="noticeModalTitle">공지</div>
+          <div class="muted" id="noticeModalMeta" style="margin-top:4px;"></div>
         </div>
-        <div class="panelMeta">
-          <span class="chip" id="ppSongCount">0곡</span>
-          <button class="miniBtn" id="ppClose" type="button">닫기</button>
-        </div>
+        <button class="miniBtn" id="noticeModalClose" type="button">닫기</button>
       </div>
-
-      <div class="list" style="margin-top:10px;">
-        <div class="head"><span>해본 곡 목록</span><span class="chip" id="ppRowCount">0행</span></div>
-        <div class="body" id="ppBody"></div>
-      </div>
+      <div class="modalBody" id="noticeModalBody"></div>
+      <div class="modalActions" id="noticeModalActions"></div>
     </div>
+  </div>
 
 <script>
-  // ====== 설정(네 시트) ======
+  // ====== 설정(고정 시트) ======
   const FIXED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1fyGPILf7sxYSBLx1gq7hFeZwV0enO0F3ufh-9DmbJp0/edit?gid=1851883768#gid=1851883768';
   const FIXED_GID = '1851883768';
   const FIXED_SHEET_NAME = 'DB';
@@ -401,6 +690,9 @@
     { key: "winter2026", title: "2026 겨울수련회 콘티", sheet: "2026겨울수련회콘티" },
     { key: "summer2026", title: "2026 여름수련회 콘티", sheet: "2026여름수련회콘티" },
   ];
+
+  // 공지 탭(선택) : A=제목, B=내용, C=링크(선택), D=날짜(선택)
+  const NOTICE_SHEET_NAME = "공지사항";
 
   // ===== 유틸 =====
   const KST_TZ = "Asia/Seoul";
@@ -523,7 +815,7 @@
 
   function fmtYmd(ts){ return fmtYmdKST(ts); }
 
-  // ✅ "라벨 URL" 한 셀(여러 줄) 파싱
+  // "라벨 URL" 한 셀(여러 줄) 파싱
   function parseLabeledLinks(cellText, defaultLabel){
     const text = (cellText ?? "").toString();
     const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
@@ -540,13 +832,24 @@
     return out;
   }
 
-  // ✅ 텍스트에서 URL 1개만 뽑기(콘티 탭 B1 용)
+  // 텍스트에서 URL 1개만 뽑기
   function extractFirstUrl(text){
     const m = (text ?? "").toString().match(/https?:\/\/\S+/i);
     return m ? m[0].trim() : "";
   }
 
   // ===== DOM =====
+  const elTopDot = document.getElementById("topDot");
+  const elTopStatusText = document.getElementById("topStatusText");
+
+  const elViewSearch = document.getElementById("viewSearch");
+  const elViewSetlists = document.getElementById("viewSetlists");
+  const elViewNotice = document.getElementById("viewNotice");
+
+  const elNavSearch = document.getElementById("navSearch");
+  const elNavSetlists = document.getElementById("navSetlists");
+  const elNavNotice = document.getElementById("navNotice");
+
   const elQ = document.getElementById("q");
   const elClear = document.getElementById("clear");
   const elSongs = document.getElementById("songs");
@@ -590,9 +893,10 @@
   const elSlTitle = document.getElementById("slTitle");
   const elSlCount = document.getElementById("slCount");
   const elSlBody = document.getElementById("slBody");
-  const elSlScoreBtn = document.getElementById("slScoreBtn"); // ✅ 추가
+  const elSlScoreBtn = document.getElementById("slScoreBtn");
   const elSlCopyBtn = document.getElementById("slCopyBtn");
   const elSlReloadBtn = document.getElementById("slReloadBtn");
+  const elSlBadge = document.getElementById("slBadge");
 
   // filter dom
   const elModeRecent = document.getElementById("modeRecent");
@@ -605,10 +909,59 @@
   const elFilterCount = document.getElementById("filterCount");
   const elNoDateChip = document.getElementById("noDateChip");
 
+  // notice dom
+  const elNoticeBody = document.getElementById("noticeBody");
+  const elNoticeCount = document.getElementById("noticeCount");
+  const elNoticeChip = document.getElementById("noticeChip");
+  const elNoticeReload = document.getElementById("noticeReload");
+  const elNoticeSourceChip = document.getElementById("noticeSourceChip");
+
+  // notice modal
+  const elNoticeModalDim = document.getElementById("noticeModalDim");
+  const elNoticeModalClose = document.getElementById("noticeModalClose");
+  const elNoticeModalTitle = document.getElementById("noticeModalTitle");
+  const elNoticeModalMeta = document.getElementById("noticeModalMeta");
+  const elNoticeModalBody = document.getElementById("noticeModalBody");
+  const elNoticeModalActions = document.getElementById("noticeModalActions");
+
+  function setTopStatus(text, ok=true){
+    elTopStatusText.textContent = text;
+    elTopDot.style.background = ok ? "rgba(142,240,208,.85)" : "rgba(255,180,180,.85)";
+    elTopDot.style.boxShadow = ok ? "0 0 0 4px rgba(142,240,208,.16)" : "0 0 0 4px rgba(255,180,180,.16)";
+  }
+
   function setStatus(msg, ok=true, loading=false){
     elStatusText.textContent = msg;
     elStatus.className = "status " + (loading ? "loading" : "") + " " + (ok ? "ok" : "bad");
+    // 탑바도 같이
+    if (loading) setTopStatus("불러오는 중…", true);
+    else setTopStatus(ok ? "연결됨" : "오류", ok);
   }
+
+  // ===== 뷰(한 페이지 길이 해결) =====
+  function setView(which){
+    const map = {
+      search: elViewSearch,
+      setlists: elViewSetlists,
+      notice: elViewNotice,
+    };
+    Object.values(map).forEach(v => v.classList.remove("active"));
+    map[which].classList.add("active");
+
+    [elNavSearch, elNavSetlists, elNavNotice].forEach(b => b.classList.remove("active"));
+    if (which === "search") elNavSearch.classList.add("active");
+    if (which === "setlists") elNavSetlists.classList.add("active");
+    if (which === "notice") elNavNotice.classList.add("active");
+
+    // 뷰 전환 시 자동완성 닫기
+    closeAC();
+    // 스크롤 상단으로
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  elNavSearch.addEventListener("click", () => setView("search"));
+  elNavSetlists.addEventListener("click", () => setView("setlists"));
+  elNavNotice.addEventListener("click", () => setView("notice"));
 
   // ===== 데이터 =====
   let DB = [];
@@ -617,7 +970,7 @@
   let SONG_INFO = new Map();
   let LAST_MEDIA = { scores: new Set(), videos: new Set() };
 
-  // ✅ 송품 상태(날짜 필터)
+  // 송품 상태(날짜 필터)
   const POOM_STATE = {
     lastSongKey: "",
     selectedDate: "__all__", // "__all__" | "2026-01-01" | "날짜 없음"
@@ -625,15 +978,18 @@
     dates: []
   };
 
-  // filter state
+  // filter state (기본: 최근 들은곡 유지)
   const FILTER_DEFAULT = { mode: "recent", weeks: 12, sort: "default" };
   let FILTER = { ...FILTER_DEFAULT };
   const FREQUENT_MIN_COUNT = 2;
 
   // setlists
   let activeSetlistKey = SETLIST_TABS[0].key;
-  // ✅ key -> { songs:[], url:"" }
   let SETLIST_CACHE = new Map();
+
+  // notices
+  let NOTICE_CACHE = []; // [{title, body, link, date}]
+  let NOTICE_FROM_SHEET = true;
 
   function rebuildSongs(){
     SONGS = uniqueBy(DB, r => r.songKey).map(r => r.song).sort((a,b) => a.localeCompare(b,"ko"));
@@ -949,14 +1305,12 @@
     return a;
   }
 
-  // ✅ 라벨+URL 기준으로 보여주기(같은 URL이어도 A/B 둘 다 가능)
   function renderMediaForExactSong(exactRows){
     if (!exactRows || !exactRows.length){ hideMediaBox(); return; }
 
     const qn = norm(elQ.value);
     const meta = META.get(qn);
 
-    // key = label||url -> {label,url}
     const scoreMap = new Map();
     const videoMap = new Map();
 
@@ -994,7 +1348,7 @@
     if (scores.length){
       elScoreRow.style.display = "flex";
       elScoreLinks.innerHTML = "";
-      scores.slice(0, 8).forEach(({url,label}) => {
+      scores.slice(0, 10).forEach(({url,label}) => {
         elScoreLinks.appendChild(makeLinkChip(url, label));
       });
     } else {
@@ -1004,7 +1358,7 @@
     if (videos.length){
       elVideoRow.style.display = "flex";
       elVideoLinks.innerHTML = "";
-      videos.slice(0, 8).forEach(({url,label}) => {
+      videos.slice(0, 10).forEach(({url,label}) => {
         elVideoLinks.appendChild(makeLinkChip(url, label));
       });
     } else {
@@ -1012,7 +1366,7 @@
     }
   }
 
-  // ===== ✅ 송품(날짜 클릭 필터) =====
+  // ===== 송품(날짜 클릭 필터) =====
   function resetPoomState(){
     POOM_STATE.lastSongKey = "";
     POOM_STATE.selectedDate = "__all__";
@@ -1178,19 +1532,17 @@
       const sUrl = trim(meta.scoreUrl);
       const lUrl = trim(meta.linkUrl);
 
-      // META는 "대표 링크" 버튼용이라서, 셀에 URL 한 개만 들어있을 때만 자연스럽게 동작
-      // 여러 줄 쓰면 위 '곡 자료' 칩으로 확인하는 걸 추천
       const sOne = extractFirstUrl(sUrl);
       const lOne = extractFirstUrl(lUrl);
 
       if (sOne && !LAST_MEDIA.scores.has(sOne)){
         elMetaScoreBtn.href = sOne;
-        elMetaScoreBtn.style.display = "inline-block";
+        elMetaScoreBtn.style.display = "inline-flex";
       } else elMetaScoreBtn.style.display = "none";
 
       if (lOne && !LAST_MEDIA.videos.has(lOne)){
         elMetaLinkBtn.href = lOne;
-        elMetaLinkBtn.style.display = "inline-block";
+        elMetaLinkBtn.style.display = "inline-flex";
       } else elMetaLinkBtn.style.display = "none";
     } else {
       elMetaScoreBtn.style.display = "none";
@@ -1293,9 +1645,9 @@
 
   // ===== 왼쪽 곡 목록(필터 적용) =====
   function activeModeLabel(){
-    if (FILTER.mode === "recent") return "최근 부른 곡";
-    if (FILTER.mode === "frequent") return "최근 자주 부른 곡";
-    if (FILTER.mode === "old") return "오래 안 한 곡";
+    if (FILTER.mode === "recent") return "최근 들은곡";
+    if (FILTER.mode === "frequent") return "자주";
+    if (FILTER.mode === "old") return "안들은곡";
     return "곡 목록";
   }
 
@@ -1462,6 +1814,7 @@
           elQ.value = s.song;
           closeAC();
           renderAll();
+          setView("search");
           window.scrollTo({ top: 0, behavior: "smooth" });
         });
         elPPBody.appendChild(div);
@@ -1490,7 +1843,6 @@
     return out;
   }
 
-  // ✅ 콘티 탭: A열 = 곡명들, B열(특히 B1) = "최종 콘티 악보" URL 1개
   async function loadSetlistFromSheet(sheetName){
     const sheetId = extractSheetId(FIXED_SHEET_URL);
     const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
@@ -1500,12 +1852,10 @@
 
     const p = await loadGvizJSONP(url);
 
-    // A열 곡명 수집
     const songsRaw = (p.rows || []).map(r => trim(r[0] ?? "")).filter(Boolean);
     const songs = (songsRaw[0] && norm(songsRaw[0]) === norm("곡명")) ? songsRaw.slice(1) : songsRaw;
     const cleanedSongs = uniqSongs(songs);
 
-    // B열에서 URL 하나만 찾기 (보통 B1에 넣는 걸 전제로 "첫 URL"만 사용)
     let setlistUrl = "";
     for (const r of (p.rows || [])){
       const u = extractFirstUrl(r[1] ?? "");
@@ -1519,7 +1869,7 @@
     for (const def of SETLIST_TABS){
       try{
         const data = await loadSetlistFromSheet(def.sheet);
-        SETLIST_CACHE.set(def.key, data); // ✅ {songs, url}
+        SETLIST_CACHE.set(def.key, data);
       } catch(e){
         SETLIST_CACHE.set(def.key, { songs: [], url: "" });
       }
@@ -1551,8 +1901,8 @@
 
     elSlTitle.textContent = def ? def.title : activeSetlistKey;
     elSlCount.textContent = String(arr.length);
+    elSlBadge.textContent = (def ? def.title : "-");
 
-    // ✅ 콘티 악보 버튼
     if (data.url){
       elSlScoreBtn.href = data.url;
       elSlScoreBtn.style.display = "inline-flex";
@@ -1576,7 +1926,7 @@
         elQ.value = song;
         closeAC();
         renderAll();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        setView("search");
       });
       elSlBody.appendChild(row);
     });
@@ -1606,6 +1956,134 @@
     slRenderTabs();
     slRenderList();
     setStatus("콘티 새로고침 완료", true, false);
+  });
+
+  // ===== 공지(시트에서 읽기) =====
+  async function loadNoticesFromSheet(){
+    const sheetId = extractSheetId(FIXED_SHEET_URL);
+    const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
+    const tq = encodeURIComponent("select A,B,C,D where A is not null or B is not null");
+    const url = base + "&sheet=" + encodeURIComponent(NOTICE_SHEET_NAME) + "&tq=" + tq;
+
+    const p = await loadGvizJSONP(url);
+    const rows = p.rows || [];
+
+    let list = rows.map(r => ({
+      title: trim(r[0] ?? ""),
+      body:  trim(r[1] ?? ""),
+      link:  trim(r[2] ?? ""),
+      date:  trim(r[3] ?? ""),
+    })).filter(x => x.title || x.body);
+
+    // 첫 행이 헤더일 수 있음
+    if (list[0] && norm(list[0].title) === norm("제목") && norm(list[0].body) === norm("내용")){
+      list = list.slice(1);
+    }
+
+    // 날짜 내림차순 우선(있으면), 없으면 입력순
+    list.sort((a,b) => {
+      const ad = normDateStr(a.date);
+      const bd = normDateStr(b.date);
+      if (ad && bd) return bd.localeCompare(ad);
+      if (ad && !bd) return -1;
+      if (!ad && bd) return 1;
+      return 0;
+    });
+
+    NOTICE_FROM_SHEET = true;
+    return list;
+  }
+
+  function openNoticeModal(n){
+    elNoticeModalTitle.textContent = n.title || "공지";
+    elNoticeModalMeta.textContent = n.date ? ("날짜: " + n.date) : "";
+    elNoticeModalBody.textContent = n.body || "";
+
+    elNoticeModalActions.innerHTML = "";
+    if (n.link && /^https?:\/\//i.test(n.link)){
+      const a = document.createElement("a");
+      a.className = "miniBtn";
+      a.href = n.link;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = "링크 열기";
+      elNoticeModalActions.appendChild(a);
+    }
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "miniBtn";
+    closeBtn.type = "button";
+    closeBtn.textContent = "닫기";
+    closeBtn.addEventListener("click", closeNoticeModal);
+    elNoticeModalActions.appendChild(closeBtn);
+
+    elNoticeModalDim.classList.add("show");
+    elNoticeModalDim.setAttribute("aria-hidden","false");
+  }
+
+  function closeNoticeModal(){
+    elNoticeModalDim.classList.remove("show");
+    elNoticeModalDim.setAttribute("aria-hidden","true");
+  }
+
+  elNoticeModalClose.addEventListener("click", closeNoticeModal);
+  elNoticeModalDim.addEventListener("click", (e) => {
+    if (e.target === elNoticeModalDim) closeNoticeModal();
+  });
+
+  function renderNotices(){
+    elNoticeCount.textContent = NOTICE_CACHE.length.toString();
+    elNoticeChip.textContent = NOTICE_CACHE.length + "개";
+    elNoticeSourceChip.textContent = NOTICE_FROM_SHEET ? "시트 연동" : "로컬";
+    elNoticeBody.innerHTML = "";
+
+    if (!NOTICE_CACHE.length){
+      elNoticeBody.innerHTML = `<div class="empty">공지 없음</div>`;
+      return;
+    }
+
+    NOTICE_CACHE.forEach((n) => {
+      const div = document.createElement("div");
+      div.className = "item";
+      const left = document.createElement("div");
+      left.style.display = "flex";
+      left.style.flexDirection = "column";
+      left.style.gap = "4px";
+
+      const title = document.createElement("div");
+      title.style.fontWeight = "900";
+      title.textContent = n.title || "(제목 없음)";
+      left.appendChild(title);
+
+      const meta = document.createElement("div");
+      meta.className = "muted";
+      meta.textContent = n.date ? n.date : (n.link ? "링크 포함" : "");
+      left.appendChild(meta);
+
+      const right = document.createElement("span");
+      right.className = "chip";
+      right.textContent = "보기";
+
+      div.appendChild(left);
+      div.appendChild(right);
+
+      div.addEventListener("click", () => openNoticeModal(n));
+      elNoticeBody.appendChild(div);
+    });
+  }
+
+  elNoticeReload.addEventListener("click", async () => {
+    setStatus("공지 불러오는 중…", true, true);
+    try{
+      NOTICE_CACHE = await loadNoticesFromSheet();
+      renderNotices();
+      setStatus("공지 새로고침 완료", true, false);
+    } catch(e){
+      NOTICE_FROM_SHEET = false;
+      NOTICE_CACHE = [];
+      renderNotices();
+      setStatus("공지 불러오기 실패\n" + e.message, false, false);
+    }
   });
 
   // ===== 필터 이벤트 =====
@@ -1651,9 +2129,10 @@
     slRenderTabs();
     slRenderList();
     setActiveModeButtons();
+    renderNotices();
   }
 
-  // ===== 연결(DB/META/SETLIST) =====
+  // ===== 연결(DB/META/SETLIST/NOTICE) =====
   async function connect(){
     const sheetId = extractSheetId(FIXED_SHEET_URL);
     if (!sheetId){
@@ -1699,6 +2178,14 @@
 
       await loadAllSetlists();
 
+      // 공지 (있으면)
+      try{
+        NOTICE_CACHE = await loadNoticesFromSheet();
+      } catch(e){
+        NOTICE_FROM_SHEET = false;
+        NOTICE_CACHE = [];
+      }
+
       elWeeksSel.value = String(FILTER.weeks);
       setFilterMode(FILTER.mode);
 
@@ -1710,9 +2197,7 @@
   }
 
   // ===== 검색 이벤트 =====
-  elQ.addEventListener("input", () => {
-    renderAll();
-  });
+  elQ.addEventListener("input", () => { renderAll(); });
 
   elQ.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown"){
@@ -1752,6 +2237,7 @@
   });
 
   // ===== 시작 =====
+  setView("search");
   setActiveModeButtons();
   slRenderTabs();
   slRenderList();
