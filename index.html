@@ -401,6 +401,116 @@
         position: static !important;
       }
     }
+
+    /* ===== 캘린더(달력형) ===== */
+    .calTop{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px; flex-wrap:wrap;
+    }
+    .calMonth{
+      font-weight:900;
+      font-size:14px;
+      display:flex; align-items:center; gap:10px;
+    }
+    .calGrid{
+      margin-top:12px;
+      border:1px solid rgba(17,24,39,.10);
+      border-radius:16px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow: var(--shadow2);
+    }
+    .calWeekHead{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      background:#fafafa;
+      border-bottom:1px solid rgba(17,24,39,.10);
+    }
+    .calWeekHead div{
+      padding:10px 8px;
+      font-size:12px;
+      color:#374151;
+      font-weight:900;
+      text-align:center;
+    }
+    .calCells{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+    }
+    .calCell{
+      min-height:110px;
+      border-right:1px solid rgba(17,24,39,.08);
+      border-bottom:1px solid rgba(17,24,39,.08);
+      padding:8px;
+      cursor:pointer;
+      background:#fff;
+      transition: background .12s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .calCell:hover{ background:#fafafa; }
+    .calCell:nth-child(7n){ border-right:0; }
+    .calCell.dim{
+      background:#fcfcfd;
+      color:rgba(17,24,39,.45);
+    }
+    .calDayRow{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:6px;
+      margin-bottom:6px;
+    }
+    .calDayNum{
+      font-weight:900;
+      font-size:12px;
+      color:#111827;
+    }
+    .calCell.dim .calDayNum{ color:rgba(17,24,39,.45); }
+    .calTodayDot{
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(122,162,255,.9);
+      box-shadow: 0 0 0 4px rgba(122,162,255,.18);
+      display:none;
+      flex:0 0 auto;
+    }
+    .calCell.today .calTodayDot{ display:inline-block; }
+    .calEvents{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .calChip{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 8px;
+      border-radius:12px;
+      border:1px solid rgba(17,24,39,.10);
+      background:#fff;
+      font-size:12px;
+      line-height:1.2;
+      color:#111827;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .calChip:hover{ background:#fafafa; }
+    .calMore{
+      font-size:12px;
+      color:#374151;
+      padding:6px 8px;
+      border-radius:12px;
+      background:var(--chip);
+      border:1px solid transparent;
+      display:inline-flex;
+      width:fit-content;
+    }
+    @media (max-width: 520px){
+      .calCell{ min-height:96px; padding:7px; }
+      .calChip{ padding:6px 7px; }
+    }
   </style>
 </head>
 
@@ -409,7 +519,7 @@
     <div class="topbarInner">
       <div class="brand">
         <div class="brandTitle">쉐키나 찬양팀</div>
-        <div class="brandSub">곡 검색 · 콘티 · 공지</div>
+        <div class="brandSub">곡 검색 · 콘티 · 캘린더 · 공지</div>
       </div>
       <div class="topStatus">
         <span class="dot" id="topDot"></span>
@@ -491,7 +601,6 @@
 
         <div class="list">
           <div class="head">검색 결과</div>
-          <!-- ✅ 모바일 스크롤/클릭 문제 해결용 id -->
           <div class="body" id="resultPaneBody">
             <div id="resultsEmpty" class="empty">검색어를 입력해 주세요.</div>
 
@@ -516,7 +625,6 @@
               </div>
             </div>
 
-            <!-- ✅ 송품(날짜 클릭 가능) -->
             <div id="metaBox" style="display:none; border-top:1px solid rgba(17,24,39,.10); padding:12px;">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
                 <div>
@@ -579,7 +687,36 @@
       </div>
     </section>
 
-    <!-- ===== VIEW 3: 공지 ===== -->
+    <!-- ===== VIEW 3: 캘린더(달력형) ===== -->
+    <section id="viewCalendar" class="view">
+      <div class="card">
+        <div class="panelHead">
+          <div class="panelTitle">캘린더</div>
+          <span class="chip" id="calCount">0</span>
+        </div>
+
+        <div class="calTop" style="margin-top:10px;">
+          <div class="calMonth">
+            <button class="miniBtn" id="calPrev" type="button">이전</button>
+            <span id="calMonthLabel">-</span>
+            <button class="miniBtn" id="calNext" type="button">다음</button>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="miniBtn" id="calToday" type="button">오늘</button>
+            <button class="miniBtn" id="calReload" type="button">새로고침</button>
+          </div>
+        </div>
+
+        <div class="calGrid" id="calGrid">
+          <div class="calWeekHead">
+            <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+          </div>
+          <div class="calCells" id="calCells"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== VIEW 4: 공지 ===== -->
     <section id="viewNotice" class="view">
       <div class="card">
         <div class="panelHead">
@@ -612,6 +749,7 @@
     <div class="navInner">
       <button class="navBtn active" id="navSearch" type="button">곡 검색</button>
       <button class="navBtn" id="navSetlists" type="button">콘티</button>
+      <button class="navBtn" id="navCalendar" type="button">캘린더</button>
       <button class="navBtn" id="navNotice" type="button">공지</button>
     </div>
   </div>
@@ -628,6 +766,21 @@
       </div>
       <div class="modalBody" id="noticeModalBody"></div>
       <div class="modalActions" id="noticeModalActions"></div>
+    </div>
+  </div>
+
+  <!-- ===== 캘린더 모달 ===== -->
+  <div class="modalDim" id="calModalDim" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calModalTitle">
+      <div class="modalHead">
+        <div>
+          <div class="modalTitle" id="calModalTitle">일정</div>
+          <div class="muted" id="calModalMeta" style="margin-top:4px;"></div>
+        </div>
+        <button class="miniBtn" id="calModalClose" type="button">닫기</button>
+      </div>
+      <div class="modalBody" id="calModalBody"></div>
+      <div class="modalActions" id="calModalActions"></div>
     </div>
   </div>
 
@@ -648,8 +801,11 @@
     { key: "summer2026", title: "2026 여름수련회 콘티", sheet: "2026여름수련회콘티" },
   ];
 
-  // 공지 탭(선택)
+  // 공지 탭
   const NOTICE_SHEET_NAME = "공지사항";
+
+  // ✅ 캘린더 탭(달력형) — 시트 탭 이름만 맞춰두면 됨
+  const CALENDAR_SHEET_NAME = "캘린더"; // 예: "일정", "calendar" 등으로 쓰면 여기만 변경
 
   // ===== 유틸 =====
   const KST_TZ = "Asia/Seoul";
@@ -660,7 +816,7 @@
   }
   const trim = (s) => (s ?? "").toString().trim();
 
-  function nowKSTTs(){
+  function nowKSTParts(){
     const now = new Date();
     const parts = new Intl.DateTimeFormat("en-US", {
       timeZone: KST_TZ,
@@ -671,15 +827,19 @@
 
     const map = {};
     for (const p of parts) if (p.type !== "literal") map[p.type] = p.value;
+    return {
+      y: parseInt(map.year, 10),
+      m: parseInt(map.month, 10),
+      d: parseInt(map.day, 10),
+      hh: parseInt(map.hour, 10),
+      mm: parseInt(map.minute, 10),
+      ss: parseInt(map.second, 10),
+    };
+  }
 
-    const y = parseInt(map.year, 10);
-    const m = parseInt(map.month, 10);
-    const d = parseInt(map.day, 10);
-    const hh = parseInt(map.hour, 10);
-    const mm = parseInt(map.minute, 10);
-    const ss = parseInt(map.second, 10);
-
-    return Date.UTC(y, m - 1, d, hh - KST_OFFSET_HOURS, mm, ss);
+  function nowKSTTs(){
+    const p = nowKSTParts();
+    return Date.UTC(p.y, p.m - 1, p.d, p.hh - KST_OFFSET_HOURS, p.mm, p.ss);
   }
 
   function fmtYmdKST(ts){
@@ -692,7 +852,7 @@
     }).format(new Date(ts));
   }
 
-  // ✅ 날짜 파서 수정: Date(YYYY,MM,DD)는 월이 0-base라 +1, "YYYY,MM,DD"는 그대로
+  // ✅ 날짜 파서: Date(YYYY,MM,DD)는 월이 0-base라 +1, "YYYY,MM,DD"는 그대로
   function normDateStr(d){
     const s = trim((d ?? "").toString());
     if (!s) return "";
@@ -701,12 +861,12 @@
     let m = s.match(/Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/i);
     if (m){
       const y = m[1];
-      const mm = String(parseInt(m[2],10)+1).padStart(2,"0"); // ✅ Date()는 0-base
+      const mm = String(parseInt(m[2],10)+1).padStart(2,"0");
       const dd = String(parseInt(m[3],10)).padStart(2,"0");
       return `${y}-${mm}-${dd}`;
     }
 
-    // 2026,02,01 형태 (사용자가 직접 입력했을 수 있음) → ✅ +1 하면 안 됨
+    // 2026,02,01 형태 → +1 하면 안 됨
     m = s.match(/^(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/);
     if (m){
       const y = m[1];
@@ -807,10 +967,12 @@
 
   const elViewSearch = document.getElementById("viewSearch");
   const elViewSetlists = document.getElementById("viewSetlists");
+  const elViewCalendar = document.getElementById("viewCalendar");
   const elViewNotice = document.getElementById("viewNotice");
 
   const elNavSearch = document.getElementById("navSearch");
   const elNavSetlists = document.getElementById("navSetlists");
+  const elNavCalendar = document.getElementById("navCalendar");
   const elNavNotice = document.getElementById("navNotice");
 
   const elQ = document.getElementById("q");
@@ -888,6 +1050,23 @@
   const elNoticeModalBody = document.getElementById("noticeModalBody");
   const elNoticeModalActions = document.getElementById("noticeModalActions");
 
+  // calendar dom
+  const elCalCount = document.getElementById("calCount");
+  const elCalPrev = document.getElementById("calPrev");
+  const elCalNext = document.getElementById("calNext");
+  const elCalToday = document.getElementById("calToday");
+  const elCalReload = document.getElementById("calReload");
+  const elCalMonthLabel = document.getElementById("calMonthLabel");
+  const elCalCells = document.getElementById("calCells");
+
+  // calendar modal
+  const elCalModalDim = document.getElementById("calModalDim");
+  const elCalModalClose = document.getElementById("calModalClose");
+  const elCalModalTitle = document.getElementById("calModalTitle");
+  const elCalModalMeta = document.getElementById("calModalMeta");
+  const elCalModalBody = document.getElementById("calModalBody");
+  const elCalModalActions = document.getElementById("calModalActions");
+
   function setTopStatus(text, ok=true){
     elTopStatusText.textContent = text;
     elTopDot.style.background = ok ? "rgba(142,240,208,.85)" : "rgba(255,180,180,.85)";
@@ -902,13 +1081,14 @@
   }
 
   function setView(which){
-    const map = { search: elViewSearch, setlists: elViewSetlists, notice: elViewNotice };
+    const map = { search: elViewSearch, setlists: elViewSetlists, calendar: elViewCalendar, notice: elViewNotice };
     Object.values(map).forEach(v => v.classList.remove("active"));
     map[which].classList.add("active");
 
-    [elNavSearch, elNavSetlists, elNavNotice].forEach(b => b.classList.remove("active"));
+    [elNavSearch, elNavSetlists, elNavCalendar, elNavNotice].forEach(b => b.classList.remove("active"));
     if (which === "search") elNavSearch.classList.add("active");
     if (which === "setlists") elNavSetlists.classList.add("active");
+    if (which === "calendar") elNavCalendar.classList.add("active");
     if (which === "notice") elNavNotice.classList.add("active");
 
     closeAC();
@@ -917,6 +1097,7 @@
 
   elNavSearch.addEventListener("click", () => setView("search"));
   elNavSetlists.addEventListener("click", () => setView("setlists"));
+  elNavCalendar.addEventListener("click", () => setView("calendar"));
   elNavNotice.addEventListener("click", () => setView("notice"));
 
   // ===== 데이터 =====
@@ -942,6 +1123,14 @@
 
   let NOTICE_CACHE = [];
   let NOTICE_FROM_SHEET = true;
+
+  // 캘린더
+  let CAL_CACHE = [];               // [{date,title,body,link}]
+  let CAL_BY_DATE = new Map();      // ymd -> events[]
+  let CAL_MONTH = (() => {
+    const p = nowKSTParts();
+    return { y: p.y, m: p.m - 1 }; // 0-base
+  })();
 
   function rebuildSongs(){
     SONGS = uniqueBy(DB, r => r.songKey).map(r => r.song).sort((a,b) => a.localeCompare(b,"ko"));
@@ -1886,7 +2075,7 @@
     setStatus("완료", true, false);
   });
 
-  // ===== 공지 (컬럼 자동 매칭 + 헤더행 제거 + 날짜 표시 정규화) =====
+  // ===== 공지 =====
   function isHeaderLikeNotice(n){
     const a = norm(n.title);
     const b = norm(n.body);
@@ -1899,7 +2088,6 @@
     const hasLink  = set.has(norm("링크"));
     const hasDate  = set.has(norm("날짜")) || set.has(norm("일자"));
 
-    // "날짜/제목/링크" 같은 행도 걸러짐
     return (hasTitle && (hasBody || hasLink || hasDate)) || (hasDate && hasTitle) || (hasLink && hasTitle);
   }
 
@@ -1926,7 +2114,6 @@
 
     let startRow = 0;
 
-    // cols 라벨이 비었거나 엉망이면 첫 행을 헤더로 재시도
     const labelsBad = header.every(h => !h || /^[a-z]$/.test(h));
     if ((idxTitle < 0 || idxBody < 0) && rows.length && labelsBad){
       const first = rows[0].map(v => norm(v));
@@ -1940,7 +2127,6 @@
       }
     }
 
-    // 그래도 없으면 기본 A=제목 B=내용 C=링크 D=날짜
     if (idxTitle < 0) idxTitle = 0;
     if (idxBody  < 0) idxBody  = 1;
     if (idxLink  < 0) idxLink  = 2;
@@ -1959,14 +2145,12 @@
         title: rawTitle,
         body: rawBody,
         link: rawLink,
-        date: normDateStr(rawDate), // ✅ 표시용 정규화
+        date: normDateStr(rawDate),
       });
     }
 
-    // 헤더 같은 행 제거
     list = list.filter(n => !isHeaderLikeNotice(n));
 
-    // 정렬
     list.sort((a,b) => {
       const ad = normDateStr(a.date);
       const bd = normDateStr(b.date);
@@ -2074,6 +2258,343 @@
     }
   });
 
+  // ===== 캘린더(달력형) =====
+  function isHeaderLikeCalendar(n){
+    const a = norm(n.date);
+    const b = norm(n.title);
+    const c = norm(n.body);
+    const d = norm(n.link);
+    const set = new Set([a,b,c,d].filter(Boolean));
+    const hasDate  = set.has(norm("날짜")) || set.has(norm("일자")) || set.has(norm("date"));
+    const hasTitle = set.has(norm("제목")) || set.has(norm("title"));
+    const hasBody  = set.has(norm("내용")) || set.has(norm("body"));
+    const hasLink  = set.has(norm("링크")) || set.has(norm("link"));
+    return (hasDate && hasTitle) || (hasDate && (hasBody || hasLink));
+  }
+
+  async function loadCalendarFromSheet(){
+    const sheetId = extractSheetId(FIXED_SHEET_URL);
+    const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
+    const tq = encodeURIComponent("select A,B,C,D where A is not null or B is not null or C is not null or D is not null");
+    const url = base + "&sheet=" + encodeURIComponent(CALENDAR_SHEET_NAME) + "&tq=" + tq;
+
+    const p = await loadGvizJSONP(url);
+    const cols = p.cols || [];
+    const rows = p.rows || [];
+
+    const dateKeys  = ["날짜","일자","date","day"].map(norm);
+    const titleKeys = ["제목","title","subject","일정","name"].map(norm);
+    const bodyKeys  = ["내용","body","text","memo","메모","설명","desc","description"].map(norm);
+    const linkKeys  = ["링크","url","link"].map(norm);
+
+    let header = cols.map(h => norm(h));
+    let idxDate  = findCol(header, dateKeys);
+    let idxTitle = findCol(header, titleKeys);
+    let idxBody  = findCol(header, bodyKeys);
+    let idxLink  = findCol(header, linkKeys);
+
+    let startRow = 0;
+
+    const labelsBad = header.every(h => !h || /^[a-z]$/.test(h));
+    if ((idxDate < 0 || idxTitle < 0) && rows.length && labelsBad){
+      const first = rows[0].map(v => norm(v));
+      const d2 = findCol(first, dateKeys);
+      const t2 = findCol(first, titleKeys);
+      const b2 = findCol(first, bodyKeys);
+      const l2 = findCol(first, linkKeys);
+      if (d2 >= 0 && t2 >= 0){
+        idxDate = d2; idxTitle = t2; idxBody = b2; idxLink = l2;
+        startRow = 1;
+      }
+    }
+
+    // 기본 A=날짜 B=제목 C=내용 D=링크
+    if (idxDate  < 0) idxDate  = 0;
+    if (idxTitle < 0) idxTitle = 1;
+    if (idxBody  < 0) idxBody  = 2;
+    if (idxLink  < 0) idxLink  = 3;
+
+    let list = [];
+    for (let i=startRow;i<rows.length;i++){
+      const r = rows[i] || [];
+      const rawDate  = trim(r[idxDate] ?? "");
+      const rawTitle = trim(r[idxTitle] ?? "");
+      const rawBody  = trim(r[idxBody] ?? "");
+      const rawLink  = trim(r[idxLink] ?? "");
+      if (!rawDate && !rawTitle && !rawBody && !rawLink) continue;
+
+      const date = normDateStr(rawDate);
+      list.push({
+        date,
+        title: rawTitle,
+        body: rawBody,
+        link: rawLink,
+      });
+    }
+
+    list = list.filter(x => !isHeaderLikeCalendar(x));
+
+    // 날짜 없는 건 뒤로
+    list.sort((a,b) => {
+      const ad = normDateStr(a.date);
+      const bd = normDateStr(b.date);
+      if (ad && bd) return ad.localeCompare(bd);
+      if (ad && !bd) return -1;
+      if (!ad && bd) return 1;
+      return 0;
+    });
+
+    return list;
+  }
+
+  function buildCalendarIndex(){
+    CAL_BY_DATE = new Map();
+    for (const ev of CAL_CACHE){
+      const d = normDateStr(ev.date);
+      if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+      if (!CAL_BY_DATE.has(d)) CAL_BY_DATE.set(d, []);
+      CAL_BY_DATE.get(d).push(ev);
+    }
+  }
+
+  function daysInMonthUTC(y, m0){
+    return new Date(Date.UTC(y, m0 + 1, 0)).getUTCDate();
+  }
+
+  function weekdayIndexKST(y, m0, d){
+    // KST 기준 요일
+    const dt = new Date(Date.UTC(y, m0, d, 0, 0, 0));
+    const w = new Intl.DateTimeFormat("en-US", { timeZone: KST_TZ, weekday: "short" }).format(dt);
+    const map = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
+    return (map[w] ?? 0);
+  }
+
+  function ymd(y,m0,d){
+    const mm = String(m0+1).padStart(2,"0");
+    const dd = String(d).padStart(2,"0");
+    return `${y}-${mm}-${dd}`;
+  }
+
+  function renderCalendar(){
+    // 카운트: 이번 달 일정 수
+    const y = CAL_MONTH.y;
+    const m0 = CAL_MONTH.m;
+
+    const mm = String(m0+1).padStart(2,"0");
+    elCalMonthLabel.textContent = `${y}-${mm}`;
+
+    const monthStart = `${y}-${mm}-01`;
+    const monthEnd = `${y}-${mm}-${String(daysInMonthUTC(y,m0)).padStart(2,"0")}`;
+
+    let cnt = 0;
+    for (const [d, arr] of CAL_BY_DATE.entries()){
+      if (d >= monthStart && d <= monthEnd) cnt += arr.length;
+    }
+    elCalCount.textContent = String(cnt);
+
+    elCalCells.innerHTML = "";
+
+    const firstW = weekdayIndexKST(y, m0, 1); // 0=일
+    const dimCount = firstW;
+    const dimPrevDays = dimCount;
+
+    // prev month
+    const prevY = (m0 === 0) ? (y - 1) : y;
+    const prevM = (m0 === 0) ? 11 : (m0 - 1);
+    const prevLast = daysInMonthUTC(prevY, prevM);
+
+    // current month days
+    const curLast = daysInMonthUTC(y, m0);
+
+    const totalCells = 42;
+    const today = (() => {
+      const p = nowKSTParts();
+      return ymd(p.y, p.m-1, p.d);
+    })();
+
+    for (let i=0;i<totalCells;i++){
+      let cellY=y, cellM=m0, cellD=0;
+      let inMonth = true;
+
+      const dayNum = i - dimPrevDays + 1;
+
+      if (dayNum <= 0){
+        inMonth = false;
+        cellY = prevY; cellM = prevM;
+        cellD = prevLast + dayNum;
+      } else if (dayNum > curLast){
+        inMonth = false;
+        const nextY = (m0 === 11) ? (y + 1) : y;
+        const nextM = (m0 === 11) ? 0 : (m0 + 1);
+        cellY = nextY; cellM = nextM;
+        cellD = dayNum - curLast;
+      } else {
+        cellD = dayNum;
+      }
+
+      const dKey = ymd(cellY, cellM, cellD);
+      const evs = CAL_BY_DATE.get(dKey) || [];
+
+      const cell = document.createElement("div");
+      cell.className = "calCell" + (inMonth ? "" : " dim") + (dKey === today ? " today" : "");
+      cell.dataset.date = dKey;
+
+      const top = document.createElement("div");
+      top.className = "calDayRow";
+      top.innerHTML = `<span class="calDayNum">${cellD}</span><span class="calTodayDot" aria-hidden="true"></span>`;
+      cell.appendChild(top);
+
+      const eventsWrap = document.createElement("div");
+      eventsWrap.className = "calEvents";
+
+      if (evs.length){
+        const maxShow = 3;
+        evs.slice(0, maxShow).forEach(ev => {
+          const chip = document.createElement("div");
+          chip.className = "calChip";
+          chip.title = ev.title || "일정";
+          chip.textContent = (ev.title || "일정").toString();
+          chip.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openCalendarEventModal(ev, dKey);
+          });
+          eventsWrap.appendChild(chip);
+        });
+
+        if (evs.length > maxShow){
+          const more = document.createElement("div");
+          more.className = "calMore";
+          more.textContent = `+${evs.length - maxShow}`;
+          eventsWrap.appendChild(more);
+        }
+      }
+
+      cell.appendChild(eventsWrap);
+
+      cell.addEventListener("click", () => {
+        if (!evs.length) return;
+        openCalendarDayModal(dKey, evs);
+      });
+
+      elCalCells.appendChild(cell);
+    }
+  }
+
+  function openCalendarEventModal(ev, dateKey){
+    elCalModalTitle.textContent = ev.title || "일정";
+    elCalModalMeta.textContent = dateKey ? ("날짜: " + dateKey) : "";
+    elCalModalBody.textContent = (ev.body || "").toString();
+
+    elCalModalActions.innerHTML = "";
+    const link = trim(ev.link);
+    if (link && /^https?:\/\//i.test(link)){
+      const a = document.createElement("a");
+      a.className = "miniBtn";
+      a.href = link;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = "링크";
+      elCalModalActions.appendChild(a);
+    }
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "miniBtn";
+    closeBtn.type = "button";
+    closeBtn.textContent = "닫기";
+    closeBtn.addEventListener("click", closeCalendarModal);
+    elCalModalActions.appendChild(closeBtn);
+
+    elCalModalDim.classList.add("show");
+    elCalModalDim.setAttribute("aria-hidden","false");
+  }
+
+  function openCalendarDayModal(dateKey, evs){
+    elCalModalTitle.textContent = "일정";
+    elCalModalMeta.textContent = dateKey ? ("날짜: " + dateKey) : "";
+    elCalModalBody.textContent = "";
+
+    // 목록을 본문에 깔끔하게
+    const lines = [];
+    evs.forEach((ev, idx) => {
+      const t = (ev.title || "일정").toString();
+      const b = (ev.body || "").toString();
+      if (b) lines.push(`${idx+1}. ${t}\n${b}`);
+      else lines.push(`${idx+1}. ${t}`);
+    });
+    elCalModalBody.textContent = lines.join("\n\n");
+
+    elCalModalActions.innerHTML = "";
+
+    // 링크가 여러 개일 수 있어서 "첫 링크"만 버튼으로
+    const firstLink = evs.map(e => trim(e.link)).find(u => u && /^https?:\/\//i.test(u)) || "";
+    if (firstLink){
+      const a = document.createElement("a");
+      a.className = "miniBtn";
+      a.href = firstLink;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = "링크";
+      elCalModalActions.appendChild(a);
+    }
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "miniBtn";
+    closeBtn.type = "button";
+    closeBtn.textContent = "닫기";
+    closeBtn.addEventListener("click", closeCalendarModal);
+    elCalModalActions.appendChild(closeBtn);
+
+    elCalModalDim.classList.add("show");
+    elCalModalDim.setAttribute("aria-hidden","false");
+  }
+
+  function closeCalendarModal(){
+    elCalModalDim.classList.remove("show");
+    elCalModalDim.setAttribute("aria-hidden","true");
+  }
+
+  elCalModalClose.addEventListener("click", closeCalendarModal);
+  elCalModalDim.addEventListener("click", (e) => {
+    if (e.target === elCalModalDim) closeCalendarModal();
+  });
+
+  elCalPrev.addEventListener("click", () => {
+    let y = CAL_MONTH.y, m = CAL_MONTH.m;
+    m -= 1;
+    if (m < 0){ m = 11; y -= 1; }
+    CAL_MONTH = { y, m };
+    renderCalendar();
+  });
+
+  elCalNext.addEventListener("click", () => {
+    let y = CAL_MONTH.y, m = CAL_MONTH.m;
+    m += 1;
+    if (m > 11){ m = 0; y += 1; }
+    CAL_MONTH = { y, m };
+    renderCalendar();
+  });
+
+  elCalToday.addEventListener("click", () => {
+    const p = nowKSTParts();
+    CAL_MONTH = { y: p.y, m: p.m - 1 };
+    renderCalendar();
+  });
+
+  elCalReload.addEventListener("click", async () => {
+    setStatus("불러오는 중…", true, true);
+    try{
+      CAL_CACHE = await loadCalendarFromSheet();
+      buildCalendarIndex();
+      renderCalendar();
+      setStatus("완료", true, false);
+    } catch(e){
+      CAL_CACHE = [];
+      buildCalendarIndex();
+      renderCalendar();
+      setStatus("캘린더 불러오기 실패\n" + e.message, false, false);
+    }
+  });
+
   // ===== 필터 이벤트 =====
   function applyFilterAndRender(){
     setActiveModeButtons();
@@ -2118,9 +2639,10 @@
     slRenderList();
     setActiveModeButtons();
     renderNotices();
+    renderCalendar();
   }
 
-  // ===== 연결(DB/META/SETLIST/NOTICE) =====
+  // ===== 연결(DB/META/SETLIST/NOTICE/CALENDAR) =====
   async function connect(){
     const sheetId = extractSheetId(FIXED_SHEET_URL);
     if (!sheetId){
@@ -2172,6 +2694,13 @@
         NOTICE_FROM_SHEET = false;
         NOTICE_CACHE = [];
       }
+
+      try{
+        CAL_CACHE = await loadCalendarFromSheet();
+      } catch(e){
+        CAL_CACHE = [];
+      }
+      buildCalendarIndex();
 
       elWeeksSel.value = String(FILTER.weeks);
       setFilterMode(FILTER.mode);
