@@ -544,6 +544,15 @@
       .calMore{ display:none !important; } /* 모바일은 점/플러스만 */
       .calDots{ margin-top:6px; }
     }
+    /* 터치(모바일/태블릿)에서는 내부 스크롤 없애고 페이지 스크롤로 + 아래 nav에 안 가리게 */
+@media (hover: none) and (pointer: coarse) {
+  #resultPaneBody{
+    max-height: none !important;
+    overflow: visible !important;
+    padding-bottom: 140px !important;
+  }
+}
+
   </style>
 </head>
 
