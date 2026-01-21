@@ -1,4 +1,3 @@
-<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
@@ -49,10 +48,18 @@
       max-width:1080px; margin:0 auto; padding:0 16px;
       display:flex; align-items:center; justify-content:space-between; gap:12px;
     }
-    .brand{ display:flex; flex-direction:column; gap:2px; color:#e8ecff; }
-    .brandTitle{ font-weight:900; letter-spacing:-.3px; font-size:16px; }
-    .brandSub{ font-size:12px; color:rgba(232,236,255,.75); line-height:1.35; }
-
+    .brand{
+      display:flex; flex-direction:column; gap:2px;
+      color:#e8ecff;
+    }
+    .brandTitle{
+      font-weight:900; letter-spacing:-.3px;
+      font-size:16px;
+    }
+    .brandSub{
+      font-size:12px; color:rgba(232,236,255,.75);
+      line-height:1.35;
+    }
     .topStatus{
       display:flex; align-items:center; gap:8px;
       color:rgba(232,236,255,.92);
@@ -75,7 +82,6 @@
     }
     .muted{ color:var(--muted); font-size:12px; }
     label{ font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
-
     .chip{
       font-size:12px;
       background:var(--chip);
@@ -84,6 +90,7 @@
       color:#374151;
       border:1px solid transparent;
       white-space:nowrap;
+      user-select:none;
     }
     .chip.ok{ background: rgba(220,252,231,.9); color:var(--ok); }
     .chip.warn{ background: rgba(254,226,226,.9); color:var(--warn); }
@@ -179,11 +186,6 @@
       scroll-behavior:smooth;
       -webkit-overflow-scrolling: touch;
     }
-    @media (max-width:900px){
-      /* ✅ 모바일에서 하단 네비가 스크롤 컨테이너 클릭을 가리는 케이스 방지 */
-      .list .body{ padding-bottom: 90px; }
-    }
-
     .item{
       padding:10px 12px;
       border-bottom:1px solid rgba(17,24,39,.10);
@@ -194,6 +196,7 @@
       cursor:pointer;
       transition:background .12s ease;
       background:#fff;
+      touch-action: manipulation;
     }
     .item:hover{ background:#fafafa; }
     .item:last-child{ border-bottom:0; }
@@ -214,7 +217,7 @@
       background:#fff;
       box-shadow: var(--shadow2);
       display:none;
-      z-index:10;
+      z-index:20;
     }
     .acHead{
       padding:8px 10px;
@@ -234,10 +237,10 @@
       display:flex; justify-content:space-between; gap:10px;
       cursor:pointer; font-size:14px;
       background:#fff;
+      touch-action: manipulation;
     }
     .acRow:last-child{ border-bottom:0; }
     .acRow:hover, .acRow.active{ background:#f9fafb; }
-
     mark{
       background:rgba(253,230,138,.55);
       padding:0 2px;
@@ -253,12 +256,17 @@
     .dateChips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
     .dateChip{ font-size:12px; }
 
-    .mediaBox{ border-top:1px solid rgba(17,24,39,.10); padding:12px; background:#fff; }
+    .mediaBox{
+      border-top:1px solid rgba(17,24,39,.10);
+      padding:12px;
+      background:#fff;
+      position:relative;
+      z-index:5; /* ✅ 모바일 탭 우선 */
+    }
     .mediaRow{ display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap; margin-top:8px; }
     .mediaLabel{ font-size:12px; color:var(--muted); min-width:44px; padding-top:2px; }
-    .mediaLinks{ display:flex; gap:6px; flex-wrap:wrap; }
-    .mediaLinks a{ position:relative; z-index:2; } /* ✅ 모바일 터치 안정 */
-    a.chipLink{ text-decoration:none; }
+    .mediaLinks{ display:flex; gap:6px; flex-wrap:wrap; position:relative; z-index:6; }
+    a.chipLink{ text-decoration:none; cursor:pointer; pointer-events:auto; touch-action: manipulation; }
 
     .filterRow{
       display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
@@ -273,6 +281,7 @@
       background:#fff;
       cursor:pointer;
       outline:none;
+      touch-action: manipulation;
     }
     select:focus{
       border-color: rgba(122,162,255,.65);
@@ -303,6 +312,7 @@
       cursor:pointer;
       border-color: rgba(17,24,39,.14);
       background:#fff;
+      touch-action: manipulation;
     }
     .chipBtn:hover{ background:#fafafa; }
     .chipBtn.active{
@@ -323,7 +333,10 @@
       border-top: 1px solid rgba(232,236,255,.12);
       z-index:60;
     }
-    .navInner{ max-width:1080px; margin:0 auto; display:flex; gap:10px; justify-content:space-between; }
+    .navInner{
+      max-width:1080px; margin:0 auto;
+      display:flex; gap:10px; justify-content:space-between;
+    }
     .navBtn{
       flex:1;
       border:1px solid rgba(232,236,255,.18);
@@ -381,11 +394,6 @@
       line-height:1.65;
       white-space:pre-wrap;
     }
-    .modalMetaBottom{
-      padding:0 14px 14px;
-      color: var(--muted);
-      font-size:12px;
-    }
     .modalActions{
       padding:12px 14px;
       border-top:1px solid rgba(17,24,39,.10);
@@ -395,18 +403,6 @@
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
     .divider{ height:1px; background: rgba(17,24,39,.10); margin:10px 0; }
-
-    /* ✅ 공지 목록: 내용 미리보기 1줄 */
-    .noticePreview{
-      color: var(--muted);
-      font-size:12px;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      display:-webkit-box;
-      -webkit-line-clamp:1;
-      -webkit-box-orient:vertical;
-      line-height:1.35;
-    }
   </style>
 </head>
 
@@ -449,6 +445,7 @@
         </div>
       </div>
 
+      <!-- ✅ 곡 목록 필터 -->
       <div class="card" id="filterCard">
         <div class="panelHead">
           <div class="panelTitle">곡 목록 필터</div>
@@ -520,6 +517,7 @@
               </div>
             </div>
 
+            <!-- ✅ 송품(날짜 클릭 가능) -->
             <div id="metaBox" style="display:none; border-top:1px solid rgba(17,24,39,.10); padding:12px;">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
                 <div>
@@ -625,11 +623,11 @@
       <div class="modalHead">
         <div>
           <div class="modalTitle" id="noticeModalTitle">공지</div>
+          <div class="muted" id="noticeModalMeta" style="margin-top:4px;"></div>
         </div>
         <button class="miniBtn" id="noticeModalClose" type="button">닫기</button>
       </div>
       <div class="modalBody" id="noticeModalBody"></div>
-      <div class="modalMetaBottom" id="noticeModalMeta"></div>
       <div class="modalActions" id="noticeModalActions"></div>
     </div>
   </div>
@@ -663,6 +661,15 @@
   }
   const trim = (s) => (s ?? "").toString().trim();
 
+  function snippet(text, n=70){
+    const t = trim(text)
+      .replace(/https?:\/\/\S+/gi, "")   // ✅ 내용에 URL이 섞여도 목록에서 안 보이게
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!t) return "";
+    return t.length > n ? (t.slice(0, n) + "…") : t;
+  }
+
   function nowKSTTs(){
     const now = new Date();
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -695,41 +702,27 @@
     }).format(new Date(ts));
   }
 
-  /* ✅ 날짜 문자열 정규화 (GVIZ Date(), ISO, 2026,1,1 / 2026. 2. 1 / 2026-02-01 다 처리)
-     - Date(YYYY, M, D)는 월이 0-based라 +1
-     - 나머지 "YYYY, M, D"는 기본 1-based로 처리
-       (하지만 문자열 안에 'Date('가 섞이면 0-based로 판단) */
-  function normDateStr(v){
-    const s0 = trim((v ?? "").toString());
+  // ✅ 날짜 문자열을 "YYYY-MM-DD"로 최대한 안정적으로 정규화
+  function normDateStr(d){
+    const s0 = trim((d ?? "").toString());
     if (!s0) return "";
 
-    // 1) GVIZ: Date(2026,1,1)
+    // 1) Google GViz가 주는 Date(YYYY,MM,DD) (MM은 0~11)
     let m = s0.match(/Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/i);
     if (m){
-      const y = parseInt(m[1], 10);
-      const mm0 = parseInt(m[2], 10); // 0-based
-      const dd = parseInt(m[3], 10);
+      const y = parseInt(m[1],10);
+      const mm0 = parseInt(m[2],10);     // 0-based
+      const dd = parseInt(m[3],10);
       const mm = String(mm0 + 1).padStart(2,"0");
-      const d  = String(dd).padStart(2,"0");
-      return `${y}-${mm}-${d}`;
+      const d2 = String(dd).padStart(2,"0");
+      return `${y}-${mm}-${d2}`;
     }
 
-    // 2) ISO: 2026-02-01T00:00:00.000Z (앞 10자리)
-    const iso = s0.match(/(\d{4}-\d{2}-\d{2})/);
-    if (iso) return iso[1];
+    // 2) "YYYY-MM-DD" (이미 정상)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s0)) return s0;
 
-    // 3) 2026-2-1 / 2026. 2. 1 / 2026/2/1
-    m = s0.match(/^(\d{4})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})/);
-    if (m){
-      const y = m[1];
-      const mm = m[2].padStart(2,"0");
-      const dd = m[3].padStart(2,"0");
-      return `${y}-${mm}-${dd}`;
-    }
-
-    // 4) 2026, 2, 1  (혹은 "2026,01,01" 같은 형태)
-    //    Date()가 아닌 경우는 1-based로 보고 그대로 사용
-    m = s0.match(/^(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/);
+    // 3) "YYYY.MM.DD" / "YYYY/MM/DD" / "YYYY-M-D"
+    m = s0.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
     if (m){
       const y = m[1];
       const mm = String(parseInt(m[2],10)).padStart(2,"0");
@@ -737,12 +730,12 @@
       return `${y}-${mm}-${dd}`;
     }
 
-    // 5) 혹시 "2026년 2월 1일"
-    m = s0.match(/^(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일?/);
+    // 4) "YYYY,MM,DD" (보통 사람이 적은 값: 1~12 기준으로 처리)
+    m = s0.match(/^(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/);
     if (m){
       const y = m[1];
-      const mm = m[2].padStart(2,"0");
-      const dd = m[3].padStart(2,"0");
+      const mm = String(parseInt(m[2],10)).padStart(2,"0");
+      const dd = String(parseInt(m[3],10)).padStart(2,"0");
       return `${y}-${mm}-${dd}`;
     }
 
@@ -754,7 +747,7 @@
     if (!s) return null;
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)){
       const [y, m, d] = s.split("-").map(n => parseInt(n,10));
-      // KST 날짜 기준(자정 KST)으로 ts 생성
+      // KST 기준 날짜를 UTC로 옮겨 저장(표시할 때 KST로 다시 포맷)
       const ts = Date.UTC(y, m-1, d, -KST_OFFSET_HOURS, 0, 0);
       return Number.isFinite(ts) ? ts : null;
     }
@@ -821,12 +814,6 @@
   function extractFirstUrl(text){
     const m = (text ?? "").toString().match(/https?:\/\/\S+/i);
     return m ? m[0].trim() : "";
-  }
-
-  function snippet(s, n=70){
-    const t = trim(s).replace(/\s+/g," ");
-    if (!t) return "";
-    return t.length > n ? (t.slice(0, n) + "…") : t;
   }
 
   // ===== DOM =====
@@ -986,7 +973,7 @@
       it.song = it.song || r.song;
       it.totalCount += 1;
 
-      const ts = toDateTs(r.date); // ✅ date는 이미 normDateStr 적용된 값으로 들어옴
+      const ts = toDateTs(r.date);
       if (ts){
         it.tsSet.add(ts);
         if (!it.lastTs || ts > it.lastTs) it.lastTs = ts;
@@ -1183,15 +1170,12 @@
       const song = trim(r[idxSong] ?? "");
       const part = trim(r[idxPart] ?? "");
       const person = trim(r[idxPerson] ?? "");
-      let date = (idxDate >= 0) ? trim(r[idxDate] ?? "") : "";
+      const date = (idxDate >= 0) ? trim(r[idxDate] ?? "") : "";
       const scoreUrl = (idxScore >= 0) ? trim(r[idxScore] ?? "") : "";
       const videoUrl = (idxVideo >= 0) ? trim(r[idxVideo] ?? "") : "";
       const songPoom = (idxPoom >= 0) ? trim(r[idxPoom] ?? "") : "";
 
       if (!song || !part || !person) continue;
-
-      // ✅ 여기서 날짜를 강제 정규화해서 DB 전체가 일관되게 동작하게 함
-      date = normDateStr(date);
 
       out.push({
         song, part, person, date, scoreUrl, videoUrl, songPoom,
@@ -1918,6 +1902,20 @@
   });
 
   // ===== 공지 =====
+  function isNoticeHeaderRow(x){
+    const a = norm(x.title);
+    const b = norm(x.body);
+    const c = norm(x.link);
+    const d = norm(x.date);
+    const headerWords = new Set(["제목","내용","링크","날짜"]);
+    const cells = [a,b,c,d].filter(Boolean);
+    let hit = 0;
+    for (const v of cells){
+      if (headerWords.has(v)) hit++;
+    }
+    return hit >= 2; // ✅ "날짜/제목/링크" 같은 헤더 행 제거
+  }
+
   async function loadNoticesFromSheet(){
     const sheetId = extractSheetId(FIXED_SHEET_URL);
     const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
@@ -1931,13 +1929,19 @@
       title: trim(r[0] ?? ""),
       body:  trim(r[1] ?? ""),
       link:  trim(r[2] ?? ""),
-      date:  normDateStr(r[3] ?? ""), // ✅ 공지도 날짜 정규화
+      date:  trim(r[3] ?? ""),
     })).filter(x => x.title || x.body);
 
-    if (list[0] && norm(list[0].title) === norm("제목") && norm(list[0].body) === norm("내용")){
-      list = list.slice(1);
-    }
+    // ✅ 1행이 헤더면 제거(날짜/제목/링크 형태 포함)
+    if (list.length && isNoticeHeaderRow(list[0])) list = list.slice(1);
 
+    // ✅ 날짜는 정규화해서 저장(정렬/표시에 안정)
+    list = list.map(n => {
+      const dn = normDateStr(n.date);
+      return { ...n, date: dn || n.date };
+    });
+
+    // ✅ 날짜 기준 내림차순 정렬(없으면 뒤로)
     list.sort((a,b) => {
       const ad = normDateStr(a.date);
       const bd = normDateStr(b.date);
@@ -1953,9 +1957,8 @@
 
   function openNoticeModal(n){
     elNoticeModalTitle.textContent = n.title || "공지";
-    elNoticeModalBody.textContent = n.body || "";
-    // ✅ 날짜는 아래로
     elNoticeModalMeta.textContent = n.date ? ("날짜: " + n.date) : "";
+    elNoticeModalBody.textContent = n.body || "";
 
     elNoticeModalActions.innerHTML = "";
     if (n.link && /^https?:\/\//i.test(n.link)){
@@ -2000,6 +2003,7 @@
       return;
     }
 
+    // ✅ 목록은 "제목 + 내용 미리보기"만 보여줌 (날짜/링크는 모달에서)
     NOTICE_CACHE.forEach((n) => {
       const div = document.createElement("div");
       div.className = "item";
@@ -2015,15 +2019,10 @@
       title.textContent = n.title || "(제목 없음)";
       left.appendChild(title);
 
-      const prev = document.createElement("div");
-      prev.className = "noticePreview";
-      prev.textContent = snippet(n.body, 80);
-      left.appendChild(prev);
-
-      const meta = document.createElement("div");
-      meta.className = "muted";
-      meta.textContent = n.date ? n.date : "";
-      left.appendChild(meta);
+      const body = document.createElement("div");
+      body.className = "muted";
+      body.textContent = snippet(n.body || "", 80);
+      left.appendChild(body);
 
       const right = document.createElement("span");
       right.className = "chip";
