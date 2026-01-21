@@ -2021,7 +2021,7 @@
   function renderNotices(){
     elNoticeCount.textContent = NOTICE_CACHE.length.toString();
     elNoticeChip.textContent = NOTICE_CACHE.length + "개";
-    elNoticeSourceChip.textContent = NOTICE_FROM_SHEET ? "시트 연동" : "로컬";
+    elNoticeSourceChip.textContent = "공지사항";
     elNoticeBody.innerHTML = "";
 
     if (!NOTICE_CACHE.length){
