@@ -1,3 +1,4 @@
+<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
@@ -510,6 +511,23 @@
     @media (max-width: 520px){
       .calCell{ min-height:96px; padding:7px; }
       .calChip{ padding:6px 7px; }
+    }
+
+    /* ✅ 캘린더 일정 칩 - 모바일에서 2줄 표시(안 짤리게) */
+    @media (max-width: 520px){
+      .calChip{
+        white-space: normal !important;     /* 줄바꿈 허용 */
+        overflow: hidden !important;
+
+        /* 2줄까지만 보여주고 넘치면 잘림 */
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-line-clamp: 2 !important;
+
+        word-break: keep-all;              /* 한글 단어 중간 쪼개짐 방지 */
+        overflow-wrap: anywhere;           /* 긴 단어 대비 */
+        line-height: 1.25 !important;
+      }
     }
   </style>
 </head>
