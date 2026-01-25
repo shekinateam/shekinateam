@@ -507,7 +507,6 @@
       width:fit-content;
     }
 
-    /* ✅ 모바일: 일정 제목 대신 "점" 표시 */
     .calDots{
       display:flex;
       flex-wrap:wrap;
@@ -540,26 +539,23 @@
 
     @media (max-width: 520px){
       .calCell{ min-height:96px; padding:7px; }
-      .calChip{ display:none !important; } /* 혹시 남아도 모바일에선 숨김 */
-      .calMore{ display:none !important; } /* 모바일은 점/플러스만 */
+      .calChip{ display:none !important; }
+      .calMore{ display:none !important; }
       .calDots{ margin-top:6px; }
     }
-    /* 터치(모바일/태블릿)에서는 내부 스크롤 없애고 페이지 스크롤로 + 아래 nav에 안 가리게 */
-@media (hover: none) and (pointer: coarse) {
-  #resultPaneBody{
-    max-height: none !important;
-    overflow: visible !important;
-    padding-bottom: 140px !important;
-  }
-}
-/* 터치(모바일/태블릿)에서는 리스트 내부 스크롤 전부 제거 */
-@media (hover: none) and (pointer: coarse) {
-  .list .body{
-    max-height: none !important;
-    overflow: visible !important;
-  }
-}
-
+    @media (hover: none) and (pointer: coarse) {
+      #resultPaneBody{
+        max-height: none !important;
+        overflow: visible !important;
+        padding-bottom: 140px !important;
+      }
+    }
+    @media (hover: none) and (pointer: coarse) {
+      .list .body{
+        max-height: none !important;
+        overflow: visible !important;
+      }
+    }
   </style>
 </head>
 
@@ -718,6 +714,7 @@
         </div>
 
         <div id="slTabs" class="dateChips" style="margin-top:10px;"></div>
+        <div id="slDayTabs" class="dateChips" style="margin-top:10px; display:none;"></div>
 
         <div class="list" style="margin-top:12px;">
           <div class="head">
@@ -833,29 +830,22 @@
   </div>
 
 <script>
-  // ====== 설정(고정 시트) ======
   const FIXED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1fyGPILf7sxYSBLx1gq7hFeZwV0enO0F3ufh-9DmbJp0/edit?gid=1851883768#gid=1851883768';
   const FIXED_GID = '1851883768';
   const FIXED_SHEET_NAME = 'DB';
 
-  // META 탭(선택)
   const META_SHEET_NAME = 'META';
-  const META_GID = ''; // 모르면 비워두면 됨
+  const META_GID = '';
 
-  // 콘티 탭 3개
   const SETLIST_TABS = [
     { key: "sunday", title: "주일 콘티", sheet: "주일콘티" },
     { key: "winter2026", title: "2026 겨울수련회 콘티", sheet: "2026겨울수련회콘티" },
     { key: "summer2026", title: "2026 여름수련회 콘티", sheet: "2026여름수련회콘티" },
   ];
 
-  // 공지 탭
   const NOTICE_SHEET_NAME = "공지사항";
-
-  // 캘린더 탭
   const CALENDAR_SHEET_NAME = "캘린더";
 
-  // ===== 유틸 =====
   const KST_TZ = "Asia/Seoul";
   const KST_OFFSET_HOURS = 9;
 
@@ -1005,7 +995,6 @@
     return m ? m[0].trim() : "";
   }
 
-  // ===== DOM =====
   const elTopDot = document.getElementById("topDot");
   const elTopStatusText = document.getElementById("topStatusText");
 
@@ -1060,6 +1049,7 @@
 
   // setlist dom
   const elSlTabs = document.getElementById("slTabs");
+  const elSlDayTabs = document.getElementById("slDayTabs");
   const elSlTitle = document.getElementById("slTitle");
   const elSlCount = document.getElementById("slCount");
   const elSlBody = document.getElementById("slBody");
@@ -1163,12 +1153,12 @@
   const FREQUENT_MIN_COUNT = 2;
 
   let activeSetlistKey = SETLIST_TABS[0].key;
+  let activeSetlistDayId = ""; // ✅ 1일차/2일차/3일차 선택값
   let SETLIST_CACHE = new Map();
 
   let NOTICE_CACHE = [];
   let NOTICE_FROM_SHEET = true;
 
-  // 캘린더
   let CAL_CACHE = [];
   let CAL_BY_DATE = new Map();
   let CAL_MONTH = (() => {
@@ -1176,7 +1166,6 @@
     return { y: p.y, m: p.m - 1 };
   })();
 
-  // 모바일 판별(캘린더 렌더 기준)
   const calMQ = window.matchMedia("(max-width: 520px)");
   function isCalMobile(){
     return !!calMQ.matches;
@@ -2012,10 +2001,85 @@
     return out;
   }
 
+  function isHeaderRowForDays(row){
+    const hs = row.map(v => norm(v));
+    const hasDay = hs.some(h => /^(\d+)일차$/.test(h));
+    return hasDay;
+  }
+
+  function buildMultiDaySetlist(rows){
+    if (!rows || rows.length < 2) return null;
+
+    const header = rows[0].map(v => trim(v ?? ""));
+    const headerN = header.map(v => norm(v));
+
+    if (!isHeaderRowForDays(header)) return null;
+
+    function idxOfExact(label){
+      const nl = norm(label);
+      let idx = headerN.findIndex(h => h === nl);
+      if (idx >= 0) return idx;
+      idx = headerN.findIndex(h => h.includes(nl));
+      return idx;
+    }
+
+    const days = [];
+    for (let n=1; n<=6; n++){
+      const dayTitle = `${n}일차`;
+      const songCol = idxOfExact(dayTitle);
+      if (songCol < 0) continue;
+
+      let scoreCol = idxOfExact(`${n}일차악보`);
+      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차 악보`);
+      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차링크`);
+      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차 링크`);
+      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차url`);
+      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차 url`);
+
+      if (scoreCol < 0 && headerN[songCol + 1]){
+        const hn = headerN[songCol + 1];
+        if (hn.includes("악보") || hn.includes("링크") || hn.includes("url")) scoreCol = songCol + 1;
+      }
+
+      const songsRaw = [];
+      let url = "";
+
+      for (let i=1;i<rows.length;i++){
+        const r = rows[i] || [];
+        const s = trim(r[songCol] ?? "");
+        if (s && norm(s) !== norm("곡명")) songsRaw.push(s);
+
+        if (!url && scoreCol >= 0){
+          const u = extractFirstUrl(r[scoreCol] ?? "");
+          if (u) url = u;
+        }
+      }
+
+      const songs = uniqSongs(songsRaw);
+      const id = `day${n}`;
+      if (songs.length || url){
+        days.push({ id, title: dayTitle, songs, url });
+      }
+    }
+
+    if (!days.length) return null;
+    return { type:"multi", days };
+  }
+
   async function loadSetlistFromSheet(sheetName){
     const sheetId = extractSheetId(FIXED_SHEET_URL);
     const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
-    const url = base + "&sheet=" + encodeURIComponent(sheetName) + "&tq=" + encodeURIComponent("select A,B where A is not null or B is not null");
+
+    const urlWide = base + "&sheet=" + encodeURIComponent(sheetName) +
+      "&tq=" + encodeURIComponent("select A,B,C,D,E,F where A is not null or B is not null or C is not null or D is not null or E is not null or F is not null");
+    const pWide = await loadGvizJSONP(urlWide);
+    const rowsWide = pWide.rows || [];
+
+    const multi = buildMultiDaySetlist(rowsWide);
+    if (multi) return multi;
+
+    const url = base + "&sheet=" + encodeURIComponent(sheetName) +
+      "&tq=" + encodeURIComponent("select A,B where A is not null or B is not null");
 
     const p = await loadGvizJSONP(url);
 
@@ -2029,7 +2093,7 @@
       if (u){ setlistUrl = u; break; }
     }
 
-    return { songs: cleanedSongs, url: setlistUrl };
+    return { type:"single", songs: cleanedSongs, url: setlistUrl };
   }
 
   async function loadAllSetlists(){
@@ -2038,7 +2102,7 @@
         const data = await loadSetlistFromSheet(def.sheet);
         SETLIST_CACHE.set(def.key, data);
       } catch(e){
-        SETLIST_CACHE.set(def.key, { songs: [], url: "" });
+        SETLIST_CACHE.set(def.key, { type:"single", songs: [], url: "" });
       }
     }
   }
@@ -2054,6 +2118,7 @@
       if (def.key === activeSetlistKey) b.classList.add("active");
       b.addEventListener("click", () => {
         activeSetlistKey = def.key;
+        activeSetlistDayId = "";
         slRenderTabs();
         slRenderList();
       });
@@ -2061,17 +2126,82 @@
     });
   }
 
-  function slRenderList(){
-    const def = SETLIST_TABS.find(d => d.key === activeSetlistKey);
-    const data = SETLIST_CACHE.get(activeSetlistKey) || { songs: [], url: "" };
-    const arr = data.songs || [];
+  function getActiveSetlistDef(){
+    return SETLIST_TABS.find(d => d.key === activeSetlistKey);
+  }
 
-    elSlTitle.textContent = def ? def.title : activeSetlistKey;
+  function getActiveSetlistData(){
+    return SETLIST_CACHE.get(activeSetlistKey) || { type:"single", songs:[], url:"" };
+  }
+
+  function getActiveDay(data){
+    if (!data || data.type !== "multi") return null;
+    const days = data.days || [];
+    if (!days.length) return null;
+
+    if (!activeSetlistDayId || !days.some(d => d.id === activeSetlistDayId)){
+      activeSetlistDayId = days[0].id;
+    }
+    return days.find(d => d.id === activeSetlistDayId) || days[0];
+  }
+
+  function slRenderDayTabs(data){
+    if (!data || data.type !== "multi" || !(data.days || []).length){
+      elSlDayTabs.style.display = "none";
+      elSlDayTabs.innerHTML = "";
+      return;
+    }
+
+    elSlDayTabs.style.display = "flex";
+    elSlDayTabs.innerHTML = "";
+
+    const days = data.days || [];
+    const active = getActiveDay(data);
+
+    days.forEach(d => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "miniBtn";
+      b.textContent = d.title;
+      b.style.borderRadius = "999px";
+      if (active && d.id === active.id) b.classList.add("active");
+      b.addEventListener("click", () => {
+        activeSetlistDayId = d.id;
+        slRenderDayTabs(data);
+        slRenderList();
+      });
+      elSlDayTabs.appendChild(b);
+    });
+  }
+
+  function slRenderList(){
+    const def = getActiveSetlistDef();
+    const data = getActiveSetlistData();
+
+    let title = def ? def.title : activeSetlistKey;
+    let arr = [];
+    let url = "";
+
+    if (data.type === "multi"){
+      slRenderDayTabs(data);
+      const day = getActiveDay(data);
+      if (day){
+        title = title + " · " + (day.title || "");
+        arr = day.songs || [];
+        url = day.url || "";
+      }
+    } else {
+      slRenderDayTabs(null);
+      arr = data.songs || [];
+      url = data.url || "";
+    }
+
+    elSlTitle.textContent = title;
     elSlCount.textContent = String(arr.length);
     elSlBadge.textContent = (def ? def.title : "-");
 
-    if (data.url){
-      elSlScoreBtn.href = data.url;
+    if (url){
+      elSlScoreBtn.href = url;
       elSlScoreBtn.style.display = "inline-flex";
     } else {
       elSlScoreBtn.style.display = "none";
@@ -2099,12 +2229,27 @@
   }
 
   elSlCopyBtn.addEventListener("click", async () => {
-    const def = SETLIST_TABS.find(d => d.key === activeSetlistKey);
-    const data = SETLIST_CACHE.get(activeSetlistKey) || { songs: [], url: "" };
-    const a = data.songs || [];
-    const urlLine = data.url ? `악보: ${data.url}\n` : "";
+    const def = getActiveSetlistDef();
+    const data = getActiveSetlistData();
 
-    const text = [(def ? def.title : activeSetlistKey), urlLine, ...a.map((s,i) => `${i+1}. ${s}`)]
+    let title = def ? def.title : activeSetlistKey;
+    let arr = [];
+    let url = "";
+
+    if (data.type === "multi"){
+      const day = getActiveDay(data);
+      if (day){
+        title = title + " · " + (day.title || "");
+        arr = day.songs || [];
+        url = day.url || "";
+      }
+    } else {
+      arr = data.songs || [];
+      url = data.url || "";
+    }
+
+    const urlLine = url ? `악보: ${url}\n` : "";
+    const text = [title, urlLine, ...arr.map((s,i) => `${i+1}. ${s}`)]
       .filter(Boolean)
       .join("\n");
 
@@ -2491,7 +2636,6 @@
 
       if (evs.length){
         if (mobile){
-          // 모바일: 점 표시
           const dots = document.createElement("div");
           dots.className = "calDots";
           const maxDots = 6;
@@ -2514,7 +2658,6 @@
           dots.title = evs.map(e => (e.title || "일정").toString()).slice(0, 8).join(" / ");
           eventsWrap.appendChild(dots);
         } else {
-          // 데스크톱: 제목 칩
           const maxShow = 3;
           evs.slice(0, maxShow).forEach(ev => {
             const chip = document.createElement("div");
@@ -2661,11 +2804,9 @@
     }
   });
 
-  // 화면 크기 바뀔 때(모바일/데스크톱 전환) 캘린더만 다시 그리기
   try{
     calMQ.addEventListener("change", () => renderCalendar());
   } catch(e){
-    // iOS 구형
     calMQ.addListener(() => renderCalendar());
   }
 
@@ -2826,7 +2967,6 @@
     elQ.focus();
   });
 
-  // ===== 시작 =====
   setView("search");
   setActiveModeButtons();
   slRenderTabs();
