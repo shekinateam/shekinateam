@@ -1153,7 +1153,7 @@
   const FREQUENT_MIN_COUNT = 2;
 
   let activeSetlistKey = SETLIST_TABS[0].key;
-  let activeSetlistDayId = ""; // ✅ 1일차/2일차/3일차 선택값
+  let activeSetlistDayId = "";
   let SETLIST_CACHE = new Map();
 
   let NOTICE_CACHE = [];
@@ -2067,43 +2067,42 @@
   }
 
   async function loadSetlistFromSheet(sheetName){
-  const sheetId = extractSheetId(FIXED_SHEET_URL);
-  const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
+    const sheetId = extractSheetId(FIXED_SHEET_URL);
+    const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
 
-  // 1) 멀티일차(여름/겨울) 감지용 와이드 쿼리: 실패해도 죽지 말고 그냥 넘어가게
-  try{
-    const urlWide = base + "&sheet=" + encodeURIComponent(sheetName) +
-      "&tq=" + encodeURIComponent(
-        "select A,B,C,D,E,F where A is not null or B is not null or C is not null or D is not null or E is not null or F is not null"
-      );
-    const pWide = await loadGvizJSONP(urlWide);
-    const rowsWide = pWide.rows || [];
+    // 1) 멀티일차 감지
+    try{
+      const urlWide = base + "&sheet=" + encodeURIComponent(sheetName) +
+        "&tq=" + encodeURIComponent(
+          "select A,B,C,D,E,F where A is not null or B is not null or C is not null or D is not null or E is not null or F is not null"
+        );
+      const pWide = await loadGvizJSONP(urlWide);
+      const rowsWide = pWide.rows || [];
 
-    const multi = buildMultiDaySetlist(rowsWide);
-    if (multi) return multi;
-  } catch(e){
-    // ✅ 주일콘티처럼 A,B만 있는 시트면 여기서 에러나도 정상(그냥 싱글로 처리)
+      const multi = buildMultiDaySetlist(rowsWide);
+      if (multi) return multi;
+    } catch(e){
+      // 주일콘티처럼 A,B만 있는 시트면 여기서 에러나도 정상(싱글로 처리)
+    }
+
+    // 2) 싱글(주일콘티)용: headers=1로 1행 헤더 제외
+    const url = base + "&sheet=" + encodeURIComponent(sheetName) +
+      "&headers=1" +
+      "&tq=" + encodeURIComponent("select A,B where A is not null or B is not null");
+
+    const p = await loadGvizJSONP(url);
+
+    const songsRaw = (p.rows || []).map(r => trim(r[0] ?? "")).filter(Boolean);
+    const cleanedSongs = uniqSongs(songsRaw);
+
+    let setlistUrl = "";
+    for (const r of (p.rows || [])){
+      const u = extractFirstUrl(r[1] ?? "");
+      if (u){ setlistUrl = u; break; }
+    }
+
+    return { type:"single", songs: cleanedSongs, url: setlistUrl };
   }
-
-  // 2) 싱글(주일콘티)용: headers=1로 1행 헤더를 데이터에서 제외
-  const url = base + "&sheet=" + encodeURIComponent(sheetName) +
-    "&headers=1" +
-    "&tq=" + encodeURIComponent("select A,B where A is not null or B is not null");
-
-  const p = await loadGvizJSONP(url);
-
-  const songsRaw = (p.rows || []).map(r => trim(r[0] ?? "")).filter(Boolean);
-  const cleanedSongs = uniqSongs(songsRaw);
-
-  let setlistUrl = "";
-  for (const r of (p.rows || [])){
-    const u = extractFirstUrl(r[1] ?? "");
-    if (u){ setlistUrl = u; break; }
-  }
-
-  return { type:"single", songs: cleanedSongs, url: setlistUrl };
-}
-
 
   async function loadAllSetlists(){
     for (const def of SETLIST_TABS){
