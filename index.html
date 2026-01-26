@@ -108,6 +108,7 @@
       gap:8px;
       user-select:none;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
     .miniBtn:hover, .btn:hover, .clearBtn:hover{ background:#fafafa; }
     .miniBtn.active{
@@ -340,6 +341,7 @@
       gap:8px;
       -webkit-tap-highlight-color: transparent;
       user-select:none;
+      touch-action: manipulation;
     }
     .navBtn.active{
       background: rgba(122,162,255,.20);
@@ -494,6 +496,7 @@
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      touch-action: manipulation;
     }
     .calChip:hover{ background:#fafafa; }
     .calMore{
@@ -555,6 +558,23 @@
         max-height: none !important;
         overflow: visible !important;
       }
+    }
+
+    /* ===== 콘티 탭 하단 액션바(악보/복사/새로고침) ===== */
+    .slActions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:12px;
+
+      position: sticky;
+      bottom: calc(10px + 76px + env(safe-area-inset-bottom)); /* 하단 네비 높이만큼 위 */
+      z-index: 70;
+
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(10px);
+      padding: 10px 0;
+      border-top: 1px solid rgba(17,24,39,.10);
     }
   </style>
 </head>
@@ -724,7 +744,8 @@
           <div class="body" id="slBody" style="max-height:520px;"></div>
         </div>
 
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+        <!-- ✅ 여기: 하단 액션바로 변경 -->
+        <div id="slActions" class="slActions">
           <a class="miniBtn" id="slScoreBtn" href="#" target="_blank" rel="noopener" style="display:none; text-decoration:none;">악보</a>
           <button class="miniBtn" id="slCopyBtn" type="button">복사</button>
           <button class="miniBtn" id="slReloadBtn" type="button">새로고침</button>
@@ -1469,6 +1490,7 @@
     a.target = "_blank";
     a.rel = "noopener";
     a.textContent = label;
+    a.style.touchAction = "manipulation";
     return a;
   }
 
@@ -1530,6 +1552,13 @@
   }
 
   // ===== 송품(날짜 클릭 필터) =====
+  const POOM_STATE = {
+    lastSongKey: "",
+    selectedDate: "__all__",
+    byDate: new Map(),
+    dates: []
+  };
+
   function resetPoomState(){
     POOM_STATE.lastSongKey = "";
     POOM_STATE.selectedDate = "__all__";
@@ -2070,7 +2099,6 @@
     const sheetId = extractSheetId(FIXED_SHEET_URL);
     const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
 
-    // 1) 멀티일차 감지
     try{
       const urlWide = base + "&sheet=" + encodeURIComponent(sheetName) +
         "&tq=" + encodeURIComponent(
@@ -2082,10 +2110,9 @@
       const multi = buildMultiDaySetlist(rowsWide);
       if (multi) return multi;
     } catch(e){
-      // 주일콘티처럼 A,B만 있는 시트면 여기서 에러나도 정상(싱글로 처리)
+      // 주일콘티처럼 A,B만 있는 시트면 여기서 에러나도 정상
     }
 
-    // 2) 싱글(주일콘티)용: headers=1로 1행 헤더 제외
     const url = base + "&sheet=" + encodeURIComponent(sheetName) +
       "&headers=1" +
       "&tq=" + encodeURIComponent("select A,B where A is not null or B is not null");
