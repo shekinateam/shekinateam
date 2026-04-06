@@ -21,6 +21,7 @@
       --warn:#991b1b;
       --accent:#7aa2ff;
       --accent2:#8ef0d0;
+      --navH: 76px;
     }
     *{ box-sizing:border-box; }
     html,body{ height:100%; }
@@ -32,7 +33,7 @@
         radial-gradient(1200px 700px at 20% -10%, rgba(122,162,255,.22), transparent 60%),
         radial-gradient(1000px 700px at 95% 10%, rgba(142,240,208,.18), transparent 55%),
         linear-gradient(160deg, var(--bg0), var(--bg1));
-      padding-bottom: calc(76px + env(safe-area-inset-bottom));
+      padding-bottom: calc(var(--navH) + 24px + env(safe-area-inset-bottom));
     }
 
     .wrap{ max-width:1080px; margin:0 auto; padding:18px 16px; }
@@ -48,29 +49,30 @@
       max-width:1080px; margin:0 auto; padding:0 16px;
       display:flex; align-items:center; justify-content:space-between; gap:12px;
     }
-    .brand{
-      display:flex; flex-direction:column; gap:2px;
-      color:#e8ecff;
-    }
-    .brandTitle{
-      font-weight:900; letter-spacing:-.3px;
-      font-size:16px;
-    }
-    .brandSub{
-      font-size:12px; color:rgba(232,236,255,.75);
-      line-height:1.35;
-    }
+    .brand{ display:flex; flex-direction:column; gap:2px; color:#e8ecff; }
+    .brandTitle{ font-weight:900; letter-spacing:-.3px; font-size:16px; }
+    .brandSub{ font-size:12px; color:rgba(232,236,255,.75); line-height:1.35; }
     .topStatus{
       display:flex; align-items:center; gap:8px;
-      color:rgba(232,236,255,.92);
-      font-size:12px;
-      white-space:nowrap;
+      color:rgba(232,236,255,.92); font-size:12px; white-space:nowrap;
     }
     .dot{
       width:8px; height:8px; border-radius:999px;
       background: rgba(232,236,255,.55);
       box-shadow: 0 0 0 4px rgba(232,236,255,.10);
     }
+
+    /* ── 오프라인 배너 ── */
+    .offlineBanner{
+      display:none;
+      background: rgba(153,27,27,.9);
+      color:#fff;
+      font-size:12px;
+      font-weight:700;
+      text-align:center;
+      padding:6px 12px;
+    }
+    body.offline .offlineBanner{ display:block; }
 
     .card{
       background: var(--card);
@@ -83,31 +85,17 @@
     .muted{ color:var(--muted); font-size:12px; }
     label{ font-size:12px; color:var(--muted); display:block; margin-bottom:6px; }
     .chip{
-      font-size:12px;
-      background:var(--chip);
-      padding:3px 9px;
-      border-radius:999px;
-      color:#374151;
-      border:1px solid transparent;
-      white-space:nowrap;
+      font-size:12px; background:var(--chip); padding:3px 9px;
+      border-radius:999px; color:#374151; border:1px solid transparent; white-space:nowrap;
     }
     .chip.ok{ background: rgba(220,252,231,.9); color:var(--ok); }
     .chip.warn{ background: rgba(254,226,226,.9); color:var(--warn); }
 
     .miniBtn, .btn, .clearBtn{
-      border:1px solid rgba(17,24,39,.14);
-      background:#fff;
-      border-radius:12px;
-      padding:8px 12px;
-      font-size:12px;
-      cursor:pointer;
-      text-decoration:none;
-      color:var(--fg);
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      user-select:none;
-      -webkit-tap-highlight-color: transparent;
+      border:1px solid rgba(17,24,39,.14); background:#fff; border-radius:12px;
+      padding:8px 12px; font-size:12px; cursor:pointer; text-decoration:none;
+      color:var(--fg); display:inline-flex; align-items:center; gap:8px;
+      user-select:none; -webkit-tap-highlight-color: transparent;
     }
     .miniBtn:hover, .btn:hover, .clearBtn:hover{ background:#fafafa; }
     .miniBtn.active{
@@ -116,16 +104,13 @@
       font-weight:900;
     }
 
+    /* ── 검색창 & 자동완성 ── */
     .searchWrap{ position:relative; }
     input[type="text"]{
-      width:100%;
-      padding:12px 46px 12px 12px;
-      border:1px solid rgba(17,24,39,.14);
-      border-radius:14px;
-      font-size:15px;
-      outline:none;
-      transition:border-color .15s ease, box-shadow .15s ease;
-      background:#fff;
+      width:100%; padding:12px 46px 12px 12px;
+      border:1px solid rgba(17,24,39,.14); border-radius:14px;
+      font-size:15px; outline:none;
+      transition:border-color .15s ease, box-shadow .15s ease; background:#fff;
     }
     input[type="text"]:focus{
       border-color: rgba(122,162,255,.65);
@@ -133,26 +118,42 @@
     }
     .clearBtn{
       position:absolute; right:8px; top:50%; transform:translateY(-50%);
-      padding:7px 10px;
-      border-radius:12px;
+      padding:7px 10px; border-radius:12px;
     }
 
+    /* ✅ 자동완성: 기본 absolute, 모바일에서 fixed로 JS가 전환 */
+    .ac{
+      position:absolute; left:0; right:0; top:calc(100% + 8px);
+      border:1px solid rgba(17,24,39,.10); border-radius:16px;
+      overflow:hidden; background:#fff; box-shadow: var(--shadow2);
+      display:none; z-index:200;
+    }
+    .acHead{
+      padding:8px 10px; background:#fafafa;
+      border-bottom:1px solid rgba(17,24,39,.10);
+      display:flex; justify-content:space-between; align-items:center;
+      gap:10px; font-size:12px; color:#374151;
+    }
+    .acBody{ max-height:260px; overflow:auto; }
+    .acRow{
+      padding:10px 12px; border-bottom:1px solid rgba(17,24,39,.10);
+      display:flex; justify-content:space-between; gap:10px;
+      cursor:pointer; font-size:14px; background:#fff;
+    }
+    .acRow:last-child{ border-bottom:0; }
+    .acRow:hover, .acRow.active{ background:#f9fafb; }
+    mark{ background:rgba(253,230,138,.55); padding:0 2px; border-radius:4px; }
+
     .status{
-      font-size:12px;
-      white-space:pre-wrap;
-      margin-top:10px;
-      display:flex;
-      align-items:center;
-      gap:8px;
+      font-size:12px; white-space:pre-wrap; margin-top:10px;
+      display:flex; align-items:center; gap:8px;
     }
     .status.ok{ color:var(--ok); }
     .status.bad{ color:var(--warn); }
     .spin{
       width:14px; height:14px; border-radius:999px;
-      border:2px solid rgba(17,24,39,.2);
-      border-top-color:rgba(17,24,39,.65);
-      animation:spin .8s linear infinite;
-      display:none;
+      border:2px solid rgba(17,24,39,.2); border-top-color:rgba(17,24,39,.65);
+      animation:spin .8s linear infinite; display:none;
     }
     .status.loading .spin{ display:inline-block; }
     @keyframes spin{ to{ transform:rotate(360deg); } }
@@ -161,88 +162,29 @@
     @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
 
     .list{
-      border:1px solid rgba(17,24,39,.10);
-      border-radius:16px;
-      overflow:hidden;
-      background:#fff;
-      box-shadow: var(--shadow2);
+      border:1px solid rgba(17,24,39,.10); border-radius:16px;
+      overflow:hidden; background:#fff; box-shadow: var(--shadow2);
     }
     .list .head{
-      padding:10px 12px;
-      background:#fafafa;
+      padding:10px 12px; background:#fafafa;
       border-bottom:1px solid rgba(17,24,39,.10);
-      font-weight:900;
-      font-size:13px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
+      font-weight:900; font-size:13px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
     }
-
-    /* ✅ 내부 스크롤 제거: 페이지 스크롤만 사용 */
-    .list .body{
-      max-height: none;
-      overflow: visible;
-    }
+    .list .body{ max-height:none; overflow:visible; }
 
     .item{
-      padding:10px 12px;
-      border-bottom:1px solid rgba(17,24,39,.10);
-      font-size:14px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      cursor:pointer;
-      transition:background .12s ease;
-      background:#fff;
+      padding:10px 12px; border-bottom:1px solid rgba(17,24,39,.10);
+      font-size:14px; display:flex; justify-content:space-between; gap:10px;
+      cursor:pointer; transition:background .12s ease; background:#fff;
     }
     .item:hover{ background:#fafafa; }
     .item:last-child{ border-bottom:0; }
     .empty{ color:var(--muted); font-size:13px; padding:12px; }
 
     table{ width:100%; border-collapse:collapse; }
-    th, td{ border-bottom:1px solid rgba(17,24,39,.10); padding:10px 10px; text-align:left; font-size:14px; }
-    th{
-      font-size:13px; color:#374151; background:#fafafa;
-      position:sticky; top:0; z-index:1;
-    }
-
-    .ac{
-      position:absolute; left:0; right:0; top:calc(100% + 8px);
-      border:1px solid rgba(17,24,39,.10);
-      border-radius:16px;
-      overflow:hidden;
-      background:#fff;
-      box-shadow: var(--shadow2);
-      display:none;
-      z-index:10;
-    }
-    .acHead{
-      padding:8px 10px;
-      background:#fafafa;
-      border-bottom:1px solid rgba(17,24,39,.10);
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      font-size:12px;
-      color:#374151;
-    }
-    .acBody{ max-height:260px; overflow:auto; }
-    .acRow{
-      padding:10px 12px;
-      border-bottom:1px solid rgba(17,24,39,.10);
-      display:flex; justify-content:space-between; gap:10px;
-      cursor:pointer; font-size:14px;
-      background:#fff;
-    }
-    .acRow:last-child{ border-bottom:0; }
-    .acRow:hover, .acRow.active{ background:#f9fafb; }
-    mark{
-      background:rgba(253,230,138,.55);
-      padding:0 2px;
-      border-radius:4px;
-    }
+    th, td{ border-bottom:1px solid rgba(17,24,39,.10); padding:10px; text-align:left; font-size:14px; }
+    th{ font-size:13px; color:#374151; background:#fafafa; position:sticky; top:0; z-index:1; }
 
     .personLink{ text-decoration:underline; cursor:pointer; color:#1f2937; }
     .personLink:hover{ color:#111827; }
@@ -265,13 +207,8 @@
     .filterLeft{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .filterRight{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:flex-end; }
     select{
-      border:1px solid rgba(17,24,39,.14);
-      border-radius:12px;
-      padding:8px 10px;
-      font-size:12px;
-      background:#fff;
-      cursor:pointer;
-      outline:none;
+      border:1px solid rgba(17,24,39,.14); border-radius:12px;
+      padding:8px 10px; font-size:12px; background:#fff; cursor:pointer; outline:none;
     }
     select:focus{
       border-color: rgba(122,162,255,.65);
@@ -284,265 +221,138 @@
     .poomLines{ margin-top:6px; }
     .poomLine{ margin-top:6px; line-height:1.6; }
     .poomTag{
-      font-weight:900;
-      padding:1px 7px;
-      border-radius:999px;
-      border:1px solid rgba(17,24,39,.14);
-      background:#fafafa;
-      margin-right:6px;
-      display:inline-block;
-      font-size:12px;
-      vertical-align:middle;
+      font-weight:900; padding:1px 7px; border-radius:999px;
+      border:1px solid rgba(17,24,39,.14); background:#fafafa;
+      margin-right:6px; display:inline-block; font-size:12px; vertical-align:middle;
     }
     .poomTag.singer{ border-color: rgba(6,95,70,.25); }
     .poomTag.inst{ border-color: rgba(17,24,39,.20); }
     .poomText{ vertical-align:middle; }
 
-    .chipBtn{
-      cursor:pointer;
-      border-color: rgba(17,24,39,.14);
-      background:#fff;
-    }
+    .chipBtn{ cursor:pointer; border-color: rgba(17,24,39,.14); background:#fff; }
     .chipBtn:hover{ background:#fafafa; }
     .chipBtn.active{
       border-color: rgba(122,162,255,.55);
       box-shadow: 0 0 0 4px rgba(122,162,255,.18);
-      font-weight:900;
-      background:#fff;
+      font-weight:900; background:#fff;
     }
 
-    .view{ display:none; }
+    .view{ display:none; padding-bottom: calc(var(--navH) + 28px + env(safe-area-inset-bottom)); }
     .view.active{ display:block; }
+    #viewSetlists{ padding-bottom: calc(var(--navH) + 48px + env(safe-area-inset-bottom)); }
 
     .nav{
       position:fixed; left:0; right:0; bottom:0;
       padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-      background: rgba(11,16,32,.86);
-      backdrop-filter: blur(10px);
-      border-top: 1px solid rgba(232,236,255,.12);
-      z-index:60;
+      background: rgba(11,16,32,.86); backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(232,236,255,.12); z-index:60;
     }
     .navInner{
       max-width:1080px; margin:0 auto;
       display:flex; gap:10px; justify-content:space-between;
     }
     .navBtn{
-      flex:1;
-      border:1px solid rgba(232,236,255,.18);
-      background: rgba(255,255,255,.06);
-      color: rgba(232,236,255,.92);
-      border-radius:16px;
-      padding:10px 10px;
-      font-size:12px;
-      font-weight:800;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      -webkit-tap-highlight-color: transparent;
-      user-select:none;
+      flex:1; border:1px solid rgba(232,236,255,.18);
+      background: rgba(255,255,255,.06); color: rgba(232,236,255,.92);
+      border-radius:16px; padding:10px; font-size:12px; font-weight:800;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      gap:8px; -webkit-tap-highlight-color: transparent; user-select:none;
     }
     .navBtn.active{
-      background: rgba(122,162,255,.20);
-      border-color: rgba(122,162,255,.45);
+      background: rgba(122,162,255,.20); border-color: rgba(122,162,255,.45);
       box-shadow: 0 0 0 4px rgba(122,162,255,.14);
     }
 
     .modalDim{
-      position:fixed; inset:0;
-      background: rgba(0,0,0,.50);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      z-index:100;
-      padding: 16px;
+      position:fixed; inset:0; background: rgba(0,0,0,.50);
+      display:none; align-items:flex-end; justify-content:center;
+      z-index:100; padding: 16px;
       padding-bottom: calc(16px + env(safe-area-inset-bottom));
     }
     .modalDim.show{ display:flex; }
     .modal{
-      width:100%;
-      max-width:720px;
-      background:#fff;
-      border-radius: 22px;
-      border:1px solid rgba(17,24,39,.10);
-      box-shadow: var(--shadow);
-      overflow:hidden;
+      width:100%; max-width:720px; background:#fff;
+      border-radius:22px; border:1px solid rgba(17,24,39,.10);
+      box-shadow: var(--shadow); overflow:hidden;
     }
     .modalHead{
-      padding:14px 14px;
-      background:#fafafa;
+      padding:14px; background:#fafafa;
       border-bottom:1px solid rgba(17,24,39,.10);
       display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
     }
     .modalTitle{ font-weight:900; font-size:14px; }
     .modalBody{
-      padding:14px;
-      font-size:14px;
-      line-height:1.65;
-      white-space:pre-wrap;
+      padding:14px; font-size:14px; line-height:1.65;
+      white-space:pre-wrap; max-height:60vh; overflow-y:auto;
     }
     .modalActions{
-      padding:12px 14px;
-      border-top:1px solid rgba(17,24,39,.10);
-      display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;
-      background:#fff;
+      padding:12px 14px; border-top:1px solid rgba(17,24,39,.10);
+      display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; background:#fff;
     }
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
     .divider{ height:1px; background: rgba(17,24,39,.10); margin:10px 0; }
 
-    @media (max-width: 900px){
-      #resultPaneBody{
-        max-height: none !important;
-        overflow: visible !important;
-        padding-bottom: 24px;
-      }
-      #resultPaneBody th{
-        position: static !important;
-      }
-    }
-
-    /* ✅ 콘티/공지 인라인 max-height 무시 */
-    #slBody, #noticeBody{
-      max-height: none !important;
-      overflow: visible !important;
-    }
-
-    /* ===== 캘린더(달력형) ===== */
-    .calTop{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px; flex-wrap:wrap;
-    }
-    .calMonth{
-      font-weight:900;
-      font-size:14px;
-      display:flex; align-items:center; gap:10px;
-    }
+    /* ── 캘린더 ── */
+    .calTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .calMonth{ font-weight:900; font-size:14px; display:flex; align-items:center; gap:10px; }
     .calGrid{
-      margin-top:12px;
-      border:1px solid rgba(17,24,39,.10);
-      border-radius:16px;
-      overflow:hidden;
-      background:#fff;
-      box-shadow: var(--shadow2);
+      margin-top:12px; border:1px solid rgba(17,24,39,.10);
+      border-radius:16px; overflow:hidden; background:#fff; box-shadow: var(--shadow2);
     }
     .calWeekHead{
-      display:grid;
-      grid-template-columns:repeat(7,1fr);
-      background:#fafafa;
-      border-bottom:1px solid rgba(17,24,39,.10);
+      display:grid; grid-template-columns:repeat(7,1fr);
+      background:#fafafa; border-bottom:1px solid rgba(17,24,39,.10);
     }
-    .calWeekHead div{
-      padding:10px 8px;
-      font-size:12px;
-      color:#374151;
-      font-weight:900;
-      text-align:center;
-    }
-    .calCells{
-      display:grid;
-      grid-template-columns:repeat(7,1fr);
-    }
+    .calWeekHead div{ padding:10px 8px; font-size:12px; color:#374151; font-weight:900; text-align:center; }
+    .calCells{ display:grid; grid-template-columns:repeat(7,1fr); }
     .calCell{
-      min-height:110px;
-      border-right:1px solid rgba(17,24,39,.08);
+      min-height:110px; border-right:1px solid rgba(17,24,39,.08);
       border-bottom:1px solid rgba(17,24,39,.08);
-      padding:8px;
-      cursor:pointer;
-      background:#fff;
-      transition: background .12s ease;
-      position:relative;
-      overflow:hidden;
+      padding:8px; cursor:pointer; background:#fff;
+      transition: background .12s ease; position:relative; overflow:hidden;
     }
     .calCell:hover{ background:#fafafa; }
     .calCell:nth-child(7n){ border-right:0; }
-    .calCell.dim{
-      background:#fcfcfd;
-      color:rgba(17,24,39,.45);
-    }
-    .calDayRow{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:6px;
-      margin-bottom:6px;
-    }
-    .calDayNum{
-      font-weight:900;
-      font-size:12px;
-      color:#111827;
-    }
+    .calCell.dim{ background:#fcfcfd; color:rgba(17,24,39,.45); }
+    .calDayRow{ display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px; }
+    .calDayNum{ font-weight:900; font-size:12px; color:#111827; }
     .calCell.dim .calDayNum{ color:rgba(17,24,39,.45); }
     .calTodayDot{
       width:8px; height:8px; border-radius:999px;
-      background: rgba(122,162,255,.9);
-      box-shadow: 0 0 0 4px rgba(122,162,255,.18);
-      display:none;
-      flex:0 0 auto;
+      background: rgba(122,162,255,.9); box-shadow: 0 0 0 4px rgba(122,162,255,.18);
+      display:none; flex:0 0 auto;
     }
     .calCell.today .calTodayDot{ display:inline-block; }
-    .calEvents{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-    }
+    .calEvents{ display:flex; flex-direction:column; gap:6px; }
     .calChip{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:6px 8px;
-      border-radius:12px;
-      border:1px solid rgba(17,24,39,.10);
-      background:#fff;
-      font-size:12px;
-      line-height:1.2;
-      color:#111827;
-      cursor:pointer;
-      user-select:none;
-      -webkit-tap-highlight-color: transparent;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 8px; border-radius:12px; border:1px solid rgba(17,24,39,.10);
+      background:#fff; font-size:12px; line-height:1.2; color:#111827;
+      cursor:pointer; user-select:none; -webkit-tap-highlight-color: transparent;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     }
     .calChip:hover{ background:#fafafa; }
     .calMore{
-      font-size:12px;
-      color:#374151;
-      padding:6px 8px;
-      border-radius:12px;
-      background:var(--chip);
-      border:1px solid transparent;
-      display:inline-flex;
-      width:fit-content;
+      font-size:12px; color:#374151; padding:6px 8px; border-radius:12px;
+      background:var(--chip); border:1px solid transparent;
+      display:inline-flex; width:fit-content;
     }
-
-    .calDots{
-      display:flex;
-      flex-wrap:wrap;
-      gap:5px;
-      align-items:center;
-      padding-top:2px;
-    }
+    .calDots{ display:flex; flex-wrap:wrap; gap:5px; align-items:center; padding-top:2px; }
     .calDot{
-      width:8px;
-      height:8px;
-      border-radius:999px;
-      background: rgba(122,162,255,.85);
-      box-shadow: 0 0 0 3px rgba(122,162,255,.14);
-      flex:0 0 auto;
-    }
-    .calDot.dim{
-      background: rgba(17,24,39,.20);
-      box-shadow: none;
+      width:8px; height:8px; border-radius:999px;
+      background: rgba(122,162,255,.85); box-shadow: 0 0 0 3px rgba(122,162,255,.14); flex:0 0 auto;
     }
     .calPlus{
-      font-size:12px;
-      padding:2px 7px;
-      border-radius:999px;
-      background:var(--chip);
-      border:1px solid transparent;
-      color:#374151;
-      font-weight:900;
-      line-height:1.4;
+      font-size:12px; padding:2px 7px; border-radius:999px;
+      background:var(--chip); border:1px solid transparent; color:#374151; font-weight:900; line-height:1.4;
+    }
+
+    /* ── 캐시 상태 뱃지 ── */
+    .cacheBadge{
+      font-size:11px; padding:2px 7px; border-radius:999px;
+      background: rgba(253,230,138,.5); color:#92400e;
+      border:1px solid rgba(253,230,138,.8);
     }
 
     @media (max-width: 520px){
@@ -551,39 +361,21 @@
       .calMore{ display:none !important; }
       .calDots{ margin-top:6px; }
     }
-
-    @media (hover: none) and (pointer: coarse) {
-      #resultPaneBody{
-        max-height: none !important;
-        overflow: visible !important;
-        padding-bottom: 140px !important;
-      }
+    @media (max-width: 900px){
+      #resultPaneBody{ max-height:none !important; overflow:visible !important; padding-bottom:24px; }
+      #resultPaneBody th{ position:static !important; }
     }
     @media (hover: none) and (pointer: coarse) {
-      .list .body{
-        max-height: none !important;
-        overflow: visible !important;
-      }
+      #resultPaneBody{ max-height:none !important; overflow:visible !important; padding-bottom:140px !important; }
+      .list .body{ max-height:none !important; overflow:visible !important; }
     }
-    :root{ --navH: 76px; } /* 네비 높이 */
-
-body{
-  padding-bottom: calc(var(--navH) + 24px + env(safe-area-inset-bottom));
-}
-
-/* 각 화면 섹션이 nav에 안 먹히게 바닥 여백 확보 */
-.view{
-  padding-bottom: calc(var(--navH) + 28px + env(safe-area-inset-bottom));
-}
-
-/* 특히 콘티 화면은 더 여유 주면 체감 좋음 */
-#viewSetlists{
-  padding-bottom: calc(var(--navH) + 48px + env(safe-area-inset-bottom));
-}
+    #slBody, #noticeBody{ max-height:none !important; overflow:visible !important; }
   </style>
 </head>
 
 <body>
+  <div class="offlineBanner" id="offlineBanner">📵 오프라인 — 캐시된 데이터를 표시합니다</div>
+
   <div class="topbar">
     <div class="topbarInner">
       <div class="brand">
@@ -602,11 +394,9 @@ body{
     <section id="viewSearch" class="view active">
       <div class="card">
         <label>곡명 검색</label>
-
         <div class="searchWrap">
           <input id="q" type="text" placeholder="곡명 검색" autocomplete="off" />
-          <button id="clear" class="clearBtn" type="button" title="지우기">지우기</button>
-
+          <button id="clear" class="clearBtn" type="button">지우기</button>
           <div id="ac" class="ac" aria-hidden="true">
             <div class="acHead">
               <span>검색 후보</span>
@@ -615,7 +405,6 @@ body{
             <div id="acBody" class="acBody"></div>
           </div>
         </div>
-
         <div id="status" class="status">
           <span class="spin" aria-hidden="true"></span>
           <span id="statusText"></span>
@@ -625,17 +414,17 @@ body{
       <div class="card" id="filterCard">
         <div class="panelHead">
           <div class="panelTitle">곡 목록 필터</div>
-          <span class="chip" id="filterCount">0</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="chip" id="filterCount">0</span>
+            <span class="cacheBadge" id="cacheStatusBadge" style="display:none;">캐시</span>
+          </div>
         </div>
-
         <div class="filterRow" style="margin-top:10px;">
           <div class="filterLeft">
             <button class="miniBtn" id="modeRecent" type="button">최근 들은곡</button>
             <button class="miniBtn" id="modeFrequent" type="button">자주</button>
             <button class="miniBtn" id="modeOld" type="button">안들은곡</button>
-
             <span class="chip" id="weeksChip">12주</span>
-
             <select id="weeksSel" title="기간(주)">
               <option value="4">4주</option>
               <option value="8">8주</option>
@@ -643,17 +432,14 @@ body{
               <option value="24">24주</option>
               <option value="52">52주</option>
             </select>
-
             <select id="sortSel" title="정렬">
               <option value="default" selected>기본 정렬</option>
               <option value="az">가나다</option>
             </select>
-
             <button class="miniBtn" id="filterReset" type="button">초기화</button>
           </div>
-
           <div class="filterRight">
-            <span class="chip" id="noDateChip" title="날짜가 없는 곡 수" style="display:none;">날짜없음 0</span>
+            <span class="chip" id="noDateChip" style="display:none;">날짜없음 0</span>
           </div>
         </div>
       </div>
@@ -671,28 +457,21 @@ body{
           <div class="head">검색 결과</div>
           <div class="body" id="resultPaneBody">
             <div id="resultsEmpty" class="empty">검색어를 입력해 주세요.</div>
-
             <table id="resultsTable" style="display:none;">
-              <thead>
-                <tr><th style="width:40%;">파트</th><th>담당자</th></tr>
-              </thead>
+              <thead><tr><th style="width:40%;">파트</th><th>담당자</th></tr></thead>
               <tbody id="results"></tbody>
             </table>
-
             <div id="mediaBox" class="mediaBox" style="display:none;">
               <div style="font-weight:900; margin-bottom:2px;">자료</div>
-
               <div class="mediaRow" id="scoreRow" style="display:none;">
                 <div class="mediaLabel">악보</div>
                 <div class="mediaLinks" id="scoreLinks"></div>
               </div>
-
               <div class="mediaRow" id="videoRow" style="display:none;">
                 <div class="mediaLabel">영상</div>
                 <div class="mediaLinks" id="videoLinks"></div>
               </div>
             </div>
-
             <div id="metaBox" style="display:none; border-top:1px solid rgba(17,24,39,.10); padding:12px;">
               <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
                 <div>
@@ -704,7 +483,6 @@ body{
                   <a id="metaLinkBtn" class="btn" href="#" target="_blank" rel="noopener" style="display:none; text-decoration:none;">링크</a>
                 </div>
               </div>
-
               <div id="poomDateTabs" class="dateChips" style="margin-top:10px;"></div>
               <div id="poomByDate" class="poomWrap"></div>
               <div id="poomCommon" class="muted" style="margin-top:10px; white-space:pre-wrap;"></div>
@@ -718,10 +496,17 @@ body{
           <div class="panelTitle"><span id="ppName"></span></div>
           <div class="panelMeta">
             <span class="chip" id="ppSongCount">0곡</span>
+            <!-- ✅ 담당자 패널 기간 필터 추가 -->
+            <select id="ppWeeksSel" title="담당자 기간">
+              <option value="0">전체</option>
+              <option value="4">4주</option>
+              <option value="8">8주</option>
+              <option value="12">12주</option>
+              <option value="24">24주</option>
+            </select>
             <button class="miniBtn" id="ppClose" type="button">닫기</button>
           </div>
         </div>
-
         <div class="list" style="margin-top:10px;">
           <div class="head"><span>참여 곡</span><span class="chip" id="ppRowCount">0행</span></div>
           <div class="body" id="ppBody"></div>
@@ -736,35 +521,32 @@ body{
           <div class="panelTitle">콘티</div>
           <span class="chip" id="slBadge">-</span>
         </div>
-
         <div id="slTabs" class="dateChips" style="margin-top:10px;"></div>
         <div id="slDayTabs" class="dateChips" style="margin-top:10px; display:none;"></div>
-
         <div class="list" style="margin-top:12px;">
           <div class="head">
             <span id="slTitle">-</span>
             <span class="chip" id="slCount">0</span>
           </div>
-          <!-- ✅ 인라인 max-height 제거 -->
           <div class="body" id="slBody"></div>
         </div>
-
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
           <a class="miniBtn" id="slScoreBtn" href="#" target="_blank" rel="noopener" style="display:none; text-decoration:none;">악보</a>
-          <button class="miniBtn" id="slCopyBtn" type="button">복사</button>
+          <!-- ✅ 복사 방식 선택 -->
+          <button class="miniBtn" id="slCopyBtn" type="button">📋 복사</button>
+          <button class="miniBtn" id="slCopyFmtBtn" type="button">💬 카톡용 복사</button>
           <button class="miniBtn" id="slReloadBtn" type="button">새로고침</button>
         </div>
       </div>
     </section>
 
-    <!-- ===== VIEW 3: 캘린더(달력형) ===== -->
+    <!-- ===== VIEW 3: 캘린더 ===== -->
     <section id="viewCalendar" class="view">
       <div class="card">
         <div class="panelHead">
           <div class="panelTitle">캘린더</div>
           <span class="chip" id="calCount">0</span>
         </div>
-
         <div class="calTop" style="margin-top:10px;">
           <div class="calMonth">
             <button class="miniBtn" id="calPrev" type="button">이전</button>
@@ -776,7 +558,6 @@ body{
             <button class="miniBtn" id="calReload" type="button">새로고침</button>
           </div>
         </div>
-
         <div class="calGrid" id="calGrid">
           <div class="calWeekHead">
             <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
@@ -793,7 +574,6 @@ body{
           <div class="panelTitle">공지사항</div>
           <span class="chip" id="noticeCount">0</span>
         </div>
-
         <div class="row" style="margin-top:10px;">
           <div class="filterLeft">
             <button class="miniBtn" id="noticeReload" type="button">새로고침</button>
@@ -802,13 +582,11 @@ body{
             <span class="chip" id="noticeSourceChip">공지사항</span>
           </div>
         </div>
-
         <div class="list" style="margin-top:12px;">
           <div class="head">
             <span>공지 목록</span>
             <span class="chip" id="noticeChip">-</span>
           </div>
-          <!-- ✅ 인라인 max-height 제거 -->
           <div class="body" id="noticeBody"></div>
         </div>
       </div>
@@ -856,2161 +634,1279 @@ body{
   </div>
 
 <script>
-  const FIXED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1fyGPILf7sxYSBLx1gq7hFeZwV0enO0F3ufh-9DmbJp0/edit?gid=1851883768#gid=1851883768';
-  const FIXED_GID = '1851883768';
-  const FIXED_SHEET_NAME = 'DB';
-
-  const META_SHEET_NAME = 'META';
-  const META_GID = '';
-
-  const SETLIST_TABS = [
-    { key: "sunday", title: "주일 콘티", sheet: "주일콘티" },
-    { key: "winter2026", title: "2026 겨울수련회 콘티", sheet: "2026겨울수련회콘티" },
-    { key: "summer2026", title: "2026 여름수련회 콘티", sheet: "2026여름수련회콘티" },
-  ];
-
-  const NOTICE_SHEET_NAME = "공지사항";
-  const CALENDAR_SHEET_NAME = "캘린더";
-
-  const KST_TZ = "Asia/Seoul";
-  const KST_OFFSET_HOURS = 9;
-
-  function norm(s){
-    return (s ?? "").toString().replace(/[\s\u200B\u200C\u200D\uFEFF]+/g, "").toLowerCase();
-  }
-  const trim = (s) => (s ?? "").toString().trim();
-
-  function nowKSTParts(){
-    const now = new Date();
-    const parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: KST_TZ,
-      year: "numeric", month: "2-digit", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", second: "2-digit",
-      hour12: false,
-    }).formatToParts(now);
-
-    const map = {};
-    for (const p of parts) if (p.type !== "literal") map[p.type] = p.value;
-    return {
-      y: parseInt(map.year, 10),
-      m: parseInt(map.month, 10),
-      d: parseInt(map.day, 10),
-      hh: parseInt(map.hour, 10),
-      mm: parseInt(map.minute, 10),
-      ss: parseInt(map.second, 10),
-    };
-  }
-
-  function nowKSTTs(){
-    const p = nowKSTParts();
-    return Date.UTC(p.y, p.m - 1, p.d, p.hh - KST_OFFSET_HOURS, p.mm, p.ss);
-  }
-
-  function fmtYmdKST(ts){
-    if (!ts) return "";
-    return new Intl.DateTimeFormat("en-CA", {
-      timeZone: KST_TZ,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(new Date(ts));
-  }
-
-  function normDateStr(d){
-    const s = trim((d ?? "").toString());
-    if (!s) return "";
-
-    let m = s.match(/Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/i);
-    if (m){
-      const y = m[1];
-      const mm = String(parseInt(m[2],10)+1).padStart(2,"0");
-      const dd = String(parseInt(m[3],10)).padStart(2,"0");
-      return `${y}-${mm}-${dd}`;
-    }
-
-    m = s.match(/^(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/);
-    if (m){
-      const y = m[1];
-      const mm = String(parseInt(m[2],10)).padStart(2,"0");
-      const dd = String(parseInt(m[3],10)).padStart(2,"0");
-      return `${y}-${mm}-${dd}`;
-    }
-
-    m = s.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
-    if (m){
-      const y = m[1];
-      const mm = m[2].padStart(2,"0");
-      const dd = m[3].padStart(2,"0");
-      return `${y}-${mm}-${dd}`;
-    }
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-    return s;
-  }
-
-  function toDateTs(v){
-    const s = normDateStr(v);
-    if (!s) return null;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)){
-      const [y, m, d] = s.split("-").map(n => parseInt(n,10));
-      const ts = Date.UTC(y, m-1, d, -KST_OFFSET_HOURS, 0, 0);
-      return Number.isFinite(ts) ? ts : null;
-    }
-    return null;
-  }
-
-  function escapeHTML(s){
-    return (s ?? "").toString()
-      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
-  }
-
-  function highlight(text, queryNorm){
-    if (!queryNorm) return escapeHTML(text);
-    const raw = (text ?? "").toString();
-    const rawNoSpace = raw.replace(/[\s\u200B\u200C\u200D\uFEFF]+/g, "");
-    const idx = rawNoSpace.toLowerCase().indexOf(queryNorm);
-    if (idx < 0) return escapeHTML(raw);
-
-    let start=-1, end=-1, count=0;
-    for (let i=0;i<raw.length;i++){
-      const ch=raw[i];
-      if (/[\s\u200B\u200C\u200D\uFEFF]/.test(ch)) continue;
-      if (count===idx) start=i;
-      if (count===idx+queryNorm.length-1){ end=i; break; }
-      count++;
-    }
-    if (start<0 || end<0) return escapeHTML(raw);
-    return escapeHTML(raw.slice(0,start)) + "<mark>" + escapeHTML(raw.slice(start,end+1)) + "</mark>" + escapeHTML(raw.slice(end+1));
-  }
-
-  function uniqueBy(arr, keyFn){
-    const seen = new Set();
-    const out = [];
-    for (const x of arr){
-      const k = keyFn(x);
-      if (seen.has(k)) continue;
-      seen.add(k);
-      out.push(x);
-    }
-    return out;
-  }
-
-  function extractSheetId(url){
-    const m = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-    return m ? m[1] : null;
-  }
-
-  function parseLabeledLinks(cellText, defaultLabel){
-    const text = (cellText ?? "").toString();
-    const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-
-    const out = [];
-    for (const line of lines){
-      const m = line.match(/(https?:\/\/\S+)/i);
-      if (!m) continue;
-      const url = m[1].trim();
-      const label = line.replace(url, "").trim() || defaultLabel;
-      out.push({ label, url });
-    }
-    return out;
-  }
-
-  function extractFirstUrl(text){
-    const m = (text ?? "").toString().match(/https?:\/\/\S+/i);
-    return m ? m[0].trim() : "";
-  }
-
-  const elTopDot = document.getElementById("topDot");
-  const elTopStatusText = document.getElementById("topStatusText");
-
-  const elViewSearch = document.getElementById("viewSearch");
-  const elViewSetlists = document.getElementById("viewSetlists");
-  const elViewCalendar = document.getElementById("viewCalendar");
-  const elViewNotice = document.getElementById("viewNotice");
-
-  const elNavSearch = document.getElementById("navSearch");
-  const elNavSetlists = document.getElementById("navSetlists");
-  const elNavCalendar = document.getElementById("navCalendar");
-  const elNavNotice = document.getElementById("navNotice");
-
-  const elQ = document.getElementById("q");
-  const elClear = document.getElementById("clear");
-
-  const elSongs = document.getElementById("songs");
-  const elSongCount = document.getElementById("songCount");
-  const elSongListTitle = document.getElementById("songListTitle");
-
-  const elResultsEmpty = document.getElementById("resultsEmpty");
-  const elResultsTable = document.getElementById("resultsTable");
-  const elResults = document.getElementById("results");
-
-  const elMediaBox = document.getElementById("mediaBox");
-  const elScoreRow = document.getElementById("scoreRow");
-  const elVideoRow = document.getElementById("videoRow");
-  const elScoreLinks = document.getElementById("scoreLinks");
-  const elVideoLinks = document.getElementById("videoLinks");
-
-  const elMetaBox = document.getElementById("metaBox");
-  const elMetaSong = document.getElementById("metaSong");
-  const elMetaScoreBtn = document.getElementById("metaScoreBtn");
-  const elMetaLinkBtn = document.getElementById("metaLinkBtn");
-  const elPoomDateTabs = document.getElementById("poomDateTabs");
-  const elPoomByDate = document.getElementById("poomByDate");
-  const elPoomCommon = document.getElementById("poomCommon");
-
-  const elStatus = document.getElementById("status");
-  const elStatusText = document.getElementById("statusText");
-
-  const elAC = document.getElementById("ac");
-  const elACBody = document.getElementById("acBody");
-  const elACMeta = document.getElementById("acMeta");
-
-  const elPersonPanel = document.getElementById("personPanel");
-  const elPPName = document.getElementById("ppName");
-  const elPPSongCount = document.getElementById("ppSongCount");
-  const elPPRowCount = document.getElementById("ppRowCount");
-  const elPPBody = document.getElementById("ppBody");
-  const elPPClose = document.getElementById("ppClose");
-
-  // setlist dom
-  const elSlTabs = document.getElementById("slTabs");
-  const elSlDayTabs = document.getElementById("slDayTabs");
-  const elSlTitle = document.getElementById("slTitle");
-  const elSlCount = document.getElementById("slCount");
-  const elSlBody = document.getElementById("slBody");
-  const elSlScoreBtn = document.getElementById("slScoreBtn");
-  const elSlCopyBtn = document.getElementById("slCopyBtn");
-  const elSlReloadBtn = document.getElementById("slReloadBtn");
-  const elSlBadge = document.getElementById("slBadge");
-
-  // filter dom
-  const elModeRecent = document.getElementById("modeRecent");
-  const elModeFrequent = document.getElementById("modeFrequent");
-  const elModeOld = document.getElementById("modeOld");
-  const elWeeksSel = document.getElementById("weeksSel");
-  const elWeeksChip = document.getElementById("weeksChip");
-  const elSortSel = document.getElementById("sortSel");
-  const elFilterReset = document.getElementById("filterReset");
-  const elFilterCount = document.getElementById("filterCount");
-  const elNoDateChip = document.getElementById("noDateChip");
-
-  // notice dom
-  const elNoticeBody = document.getElementById("noticeBody");
-  const elNoticeCount = document.getElementById("noticeCount");
-  const elNoticeChip = document.getElementById("noticeChip");
-  const elNoticeReload = document.getElementById("noticeReload");
-  const elNoticeSourceChip = document.getElementById("noticeSourceChip");
-
-  // notice modal
-  const elNoticeModalDim = document.getElementById("noticeModalDim");
-  const elNoticeModalClose = document.getElementById("noticeModalClose");
-  const elNoticeModalTitle = document.getElementById("noticeModalTitle");
-  const elNoticeModalMeta = document.getElementById("noticeModalMeta");
-  const elNoticeModalBody = document.getElementById("noticeModalBody");
-  const elNoticeModalActions = document.getElementById("noticeModalActions");
-
-  // calendar dom
-  const elCalCount = document.getElementById("calCount");
-  const elCalPrev = document.getElementById("calPrev");
-  const elCalNext = document.getElementById("calNext");
-  const elCalToday = document.getElementById("calToday");
-  const elCalReload = document.getElementById("calReload");
-  const elCalMonthLabel = document.getElementById("calMonthLabel");
-  const elCalCells = document.getElementById("calCells");
-
-  // calendar modal
-  const elCalModalDim = document.getElementById("calModalDim");
-  const elCalModalClose = document.getElementById("calModalClose");
-  const elCalModalTitle = document.getElementById("calModalTitle");
-  const elCalModalMeta = document.getElementById("calModalMeta");
-  const elCalModalBody = document.getElementById("calModalBody");
-  const elCalModalActions = document.getElementById("calModalActions");
-
-  function setTopStatus(text, ok=true){
-    elTopStatusText.textContent = text;
-    elTopDot.style.background = ok ? "rgba(142,240,208,.85)" : "rgba(255,180,180,.85)";
-    elTopDot.style.boxShadow = ok ? "0 0 0 4px rgba(142,240,208,.16)" : "0 0 0 4px rgba(255,180,180,.16)";
-  }
-
-  function setStatus(msg, ok=true, loading=false){
-    elStatusText.textContent = msg;
-    elStatus.className = "status " + (loading ? "loading" : "") + " " + (ok ? "ok" : "bad");
-    if (loading) setTopStatus("불러오는 중…", true);
-    else setTopStatus(ok ? "연결됨" : "오류", ok);
-  }
-
-  function setView(which){
-    const map = { search: elViewSearch, setlists: elViewSetlists, calendar: elViewCalendar, notice: elViewNotice };
-    Object.values(map).forEach(v => v.classList.remove("active"));
-    map[which].classList.add("active");
-
-    [elNavSearch, elNavSetlists, elNavCalendar, elNavNotice].forEach(b => b.classList.remove("active"));
-    if (which === "search") elNavSearch.classList.add("active");
-    if (which === "setlists") elNavSetlists.classList.add("active");
-    if (which === "calendar") elNavCalendar.classList.add("active");
-    if (which === "notice") elNavNotice.classList.add("active");
-
-    closeAC();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  elNavSearch.addEventListener("click", () => setView("search"));
-  elNavSetlists.addEventListener("click", () => setView("setlists"));
-  elNavCalendar.addEventListener("click", () => setView("calendar"));
-  elNavNotice.addEventListener("click", () => setView("notice"));
-
-  // ===== 데이터 =====
-  let DB = [];
-  let META = new Map();
-  let SONGS = [];
-  let SONG_INFO = new Map();
-  let LAST_MEDIA = { scores: new Set(), videos: new Set() };
-
-  const POOM_STATE = {
-    lastSongKey: "",
-    selectedDate: "__all__",
-    byDate: new Map(),
-    dates: []
-  };
-
-  const FILTER_DEFAULT = { mode: "recent", weeks: 12, sort: "default" };
-  let FILTER = { ...FILTER_DEFAULT };
-  const FREQUENT_MIN_COUNT = 2;
-
-  let activeSetlistKey = SETLIST_TABS[0].key;
-  let activeSetlistDayId = ""; // ✅ 1일차/2일차/3일차 선택값
-  let SETLIST_CACHE = new Map();
-
-  let NOTICE_CACHE = [];
-  let NOTICE_FROM_SHEET = true;
-
-  let CAL_CACHE = [];
-  let CAL_BY_DATE = new Map();
-  let CAL_MONTH = (() => {
-    const p = nowKSTParts();
-    return { y: p.y, m: p.m - 1 };
-  })();
-
-  const calMQ = window.matchMedia("(max-width: 520px)");
-  function isCalMobile(){
-    return !!calMQ.matches;
-  }
-
-  function rebuildSongs(){
-    SONGS = uniqueBy(DB, r => r.songKey).map(r => r.song).sort((a,b) => a.localeCompare(b,"ko"));
-  }
-
-  function buildSongInfo(){
-    SONG_INFO = new Map();
-    for (const r of DB){
-      const sk = r.songKey;
-      if (!SONG_INFO.has(sk)){
-        SONG_INFO.set(sk, { song: r.song, lastTs: null, totalCount: 0, tsSet: new Set(), tsList: [] });
-      }
-      const it = SONG_INFO.get(sk);
-      it.song = it.song || r.song;
-      it.totalCount += 1;
-
-      const ts = toDateTs(r.date);
-      if (ts){
-        it.tsSet.add(ts);
-        if (!it.lastTs || ts > it.lastTs) it.lastTs = ts;
-      }
-    }
-    for (const it of SONG_INFO.values()){
-      it.tsList = Array.from(it.tsSet).sort((a,b) => a - b);
-      delete it.tsSet;
-    }
-  }
-
-  function cutoffTsByWeeks(weeks){
-    const nowTs = nowKSTTs();
-    const ms = weeks * 7 * 24 * 60 * 60 * 1000;
-    return nowTs - ms;
-  }
-
-  function countInWindow(tsList, cutoffTs){
-    let lo = 0, hi = tsList.length;
-    while (lo < hi){
-      const mid = (lo + hi) >> 1;
-      if (tsList[mid] < cutoffTs) lo = mid + 1;
-      else hi = mid;
-    }
-    return tsList.length - lo;
-  }
-
-  function getFilteredSongKeys(){
-    const cutoff = cutoffTsByWeeks(FILTER.weeks);
-    let keys = [];
-    let noDateCount = 0;
-
-    for (const [sk, info] of SONG_INFO.entries()){
-      const hasDate = !!info.lastTs;
-
-      if (!hasDate){
-        noDateCount += 1;
-        keys.push(sk);
-        continue;
-      }
-
-      if (FILTER.mode === "recent"){
-        const c = countInWindow(info.tsList, cutoff);
-        if (c >= 1) keys.push(sk);
-      } else if (FILTER.mode === "frequent"){
-        const c = countInWindow(info.tsList, cutoff);
-        if (c >= FREQUENT_MIN_COUNT) keys.push(sk);
-      } else if (FILTER.mode === "old"){
-        if (info.lastTs < cutoff) keys.push(sk);
-      }
-    }
-
-    elNoDateChip.textContent = "날짜없음 " + noDateCount;
-    elNoDateChip.style.display = noDateCount ? "inline-block" : "none";
-    return keys;
-  }
-
-  function getFilteredSongs(){
-    const keys = getFilteredSongKeys();
-    const list = keys.map(sk => {
-      const info = SONG_INFO.get(sk);
-      return { songKey: sk, song: info?.song || "", info };
-    });
-
-    if (FILTER.sort === "az"){
-      list.sort((a,b) => a.song.localeCompare(b.song, "ko"));
-    } else {
-      if (FILTER.mode === "recent"){
-        list.sort((a,b) => ((b.info.lastTs || 0) - (a.info.lastTs || 0)));
-      } else if (FILTER.mode === "frequent"){
-        const cutoff = cutoffTsByWeeks(FILTER.weeks);
-        list.sort((a,b) => {
-          const ca = countInWindow(a.info.tsList, cutoff);
-          const cb = countInWindow(b.info.tsList, cutoff);
-          if (cb !== ca) return cb - ca;
-          return (b.info.lastTs || 0) - (a.info.lastTs || 0);
-        });
-      } else if (FILTER.mode === "old"){
-        list.sort((a,b) => {
-          const ta = (a.info.lastTs === null) ? Number.POSITIVE_INFINITY : a.info.lastTs;
-          const tb = (b.info.lastTs === null) ? Number.POSITIVE_INFINITY : b.info.lastTs;
-          return ta - tb;
-        });
-      }
-    }
-    return list;
-  }
-
-  // ===== GVIZ JSONP =====
-  function loadGvizJSONP(url){
-    return new Promise((resolve, reject) => {
-      const cbName = "__gviz_cb_" + Math.random().toString(36).slice(2);
-      const timeout = setTimeout(() => {
-        cleanup();
-        reject(new Error("타임아웃: GVIZ 응답 없음"));
-      }, 12000);
-
-      let script = null;
-      function cleanup(){
-        clearTimeout(timeout);
-        try{ delete window[cbName]; }catch(e){}
-        if (script && script.parentNode) script.parentNode.removeChild(script);
-      }
-
-      window[cbName] = (payload) => {
-        try{
-          cleanup();
-          if (payload && payload.status && payload.status !== "ok"){
-            const msg = (payload.errors && payload.errors.length)
-              ? payload.errors.map(e => e.message).join(" / ")
-              : ("GVIZ status=" + payload.status);
-            reject(new Error(msg));
-            return;
-          }
-          const table = payload.table;
-          const cols = table.cols.map(c => (c.label || "").trim());
-          const rows = table.rows.map(r => r.c.map(c => (c && c.v !== null && c.v !== undefined) ? String(c.v) : ""));
-          resolve({ cols, rows });
-        }catch(e){
-          reject(new Error("파싱 실패: " + e.message));
-        }
-      };
-
-      window.google = window.google || {};
-      window.google.visualization = window.google.visualization || {};
-      window.google.visualization.Query = window.google.visualization.Query || {};
-      window.google.visualization.Query.setResponse = (payload) => window[cbName](payload);
-
-      script = document.createElement("script");
-      script.src = url;
-      script.onerror = () => { cleanup(); reject(new Error("스크립트 로드 실패")); };
-      document.head.appendChild(script);
-    });
-  }
-
-  function findCol(headerNorm, candidates){
-    for (const c of candidates){
-      const i = headerNorm.findIndex(h => h === c);
-      if (i >= 0) return i;
-    }
-    for (const c of candidates){
-      const i = headerNorm.findIndex(h => h.includes(c));
-      if (i >= 0) return i;
-    }
-    return -1;
-  }
-
-  function toDBWithHeaderRecovery(cols, rows){
-    const songKeys = ["곡명","노래","노래제목","제목","song","title","name"].map(norm);
-    const partKeys = ["파트악기","파트","악기","instrument","part","세션"].map(norm);
-    const personKeys = ["담당자","담당","연주자","멤버","이름","person","member"].map(norm);
-    const dateKeys = ["등록일","날짜","일자","date","when","time","일시"].map(norm);
-    const scoreKeys = ["악보url","악보","score","sheet","chord","악보링크"].map(norm);
-    const videoKeys = ["영상url","영상","video","youtube","유튜브"].map(norm);
-    const poomKeys = ["송품","메모","노트","note","memo","주의","주의사항","유의사항","warn","warning"].map(norm);
-
-    let header = cols.map(h => norm(h));
-    let dataRows = rows;
-
-    let idxSong = findCol(header, songKeys);
-    let idxPart = findCol(header, partKeys);
-    let idxPerson = findCol(header, personKeys);
-    let idxDate = findCol(header, dateKeys);
-    let idxScore = findCol(header, scoreKeys);
-    let idxVideo = findCol(header, videoKeys);
-    let idxPoom = findCol(header, poomKeys);
-
-    const labelsBad = header.every(h => !h || /^[a-z]$/.test(h));
-    if ((idxSong < 0 || idxPart < 0 || idxPerson < 0) && dataRows.length && labelsBad){
-      const firstRowHeader = dataRows[0].map(v => norm(v));
-      const s2 = findCol(firstRowHeader, songKeys);
-      const p2 = findCol(firstRowHeader, partKeys);
-      const m2 = findCol(firstRowHeader, personKeys);
-      const d2 = findCol(firstRowHeader, dateKeys);
-      const sc2 = findCol(firstRowHeader, scoreKeys);
-      const vd2 = findCol(firstRowHeader, videoKeys);
-      const po2 = findCol(firstRowHeader, poomKeys);
-      if (s2 >= 0 && p2 >= 0 && m2 >= 0){
-        header = firstRowHeader;
-        idxSong = s2; idxPart = p2; idxPerson = m2;
-        idxDate = d2; idxScore = sc2; idxVideo = vd2; idxPoom = po2;
-        dataRows = dataRows.slice(1);
-      }
-    }
-
-    if (idxSong < 0 || idxPart < 0 || idxPerson < 0){
-      const seenCols = cols.filter(Boolean).slice(0, 12).join(", ") || "(빈 헤더)";
-      const seenRow1 = (rows[0] ? rows[0].slice(0, 12).join(", ") : "(첫행 없음)");
-      throw new Error("컬럼 매칭 실패\n감지된 헤더(label): " + seenCols + "\n첫 행(미리보기): " + seenRow1);
-    }
-
-    const out = [];
-    for (const r of dataRows){
-      const song = trim(r[idxSong] ?? "");
-      const part = trim(r[idxPart] ?? "");
-      const person = trim(r[idxPerson] ?? "");
-      const date = (idxDate >= 0) ? trim(r[idxDate] ?? "") : "";
-      const scoreUrl = (idxScore >= 0) ? trim(r[idxScore] ?? "") : "";
-      const videoUrl = (idxVideo >= 0) ? trim(r[idxVideo] ?? "") : "";
-      const songPoom = (idxPoom >= 0) ? trim(r[idxPoom] ?? "") : "";
-
-      if (!song || !part || !person) continue;
-
-      out.push({
-        song, part, person, date, scoreUrl, videoUrl, songPoom,
-        songKey: norm(song),
-        partKey: norm(part),
-        personKey: norm(person),
-      });
-    }
-    return out;
-  }
-
-  function toMetaMapWithHeaderRecovery(cols, rows){
-    const songKeys = ["곡명","노래","노래제목","제목","song","title","name"].map(norm);
-    const scoreKeys = ["악보url","악보","score","sheet","chord","악보링크"].map(norm);
-    const noteKeys = ["메모","노트","note","memo","콘티메모","콘티","송품"].map(norm);
-    const warnKeys = ["주의사항","주의","warn","warning","주의점","유의사항"].map(norm);
-    const linkKeys = ["링크","url","영상","youtube","참고","reference"].map(norm);
-
-    const colLabels = cols.map(h => norm(h));
-    let idxSong = findCol(colLabels, songKeys);
-    let idxScore = findCol(colLabels, scoreKeys);
-    let idxNote = findCol(colLabels, noteKeys);
-    let idxWarn = findCol(colLabels, warnKeys);
-    let idxLink = findCol(colLabels, linkKeys);
-
-    let startRow = 0;
-    if (idxSong < 0 && rows && rows.length){
-      const first = rows[0].map(v => norm(v));
-      const s2 = findCol(first, songKeys);
-      if (s2 >= 0){
-        idxSong = s2;
-        idxScore = findCol(first, scoreKeys);
-        idxNote = findCol(first, noteKeys);
-        idxWarn = findCol(first, warnKeys);
-        idxLink = findCol(first, linkKeys);
-        startRow = 1;
-      }
-    }
-
-    const m = new Map();
-    for (let i=startRow;i<rows.length;i++){
-      const r = rows[i];
-      const song = trim(r[idxSong]);
-      if (!song) continue;
-      const key = norm(song);
-
-      const scoreUrl = idxScore >= 0 ? trim(r[idxScore]) : "";
-      const linkUrl  = idxLink  >= 0 ? trim(r[idxLink])  : "";
-      const note     = idxNote  >= 0 ? trim(r[idxNote])  : "";
-      const warn     = idxWarn  >= 0 ? trim(r[idxWarn])  : "";
-
-      const prev = m.get(key) || { song, scoreUrl:"", linkUrl:"", note:"", warn:"" };
-      m.set(key, {
-        song: prev.song || song,
-        scoreUrl: prev.scoreUrl || scoreUrl,
-        linkUrl: prev.linkUrl || linkUrl,
-        note: prev.note || note,
-        warn: prev.warn || warn,
-      });
-    }
-    return m;
-  }
-
-  // ===== 미디어 =====
-  function hideMediaBox(){
-    elMediaBox.style.display = "none";
-    elScoreRow.style.display = "none";
-    elVideoRow.style.display = "none";
-    elScoreLinks.innerHTML = "";
-    elVideoLinks.innerHTML = "";
-    LAST_MEDIA = { scores: new Set(), videos: new Set() };
-  }
-
-  function makeLinkChip(href, label){
-    const a = document.createElement("a");
-    a.className = "chip chipLink";
-    a.href = href;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.textContent = label;
-    return a;
-  }
-
-  function renderMediaForExactSong(exactRows){
-    if (!exactRows || !exactRows.length){ hideMediaBox(); return; }
-
-    const qn = norm(elQ.value);
-    const meta = META.get(qn);
-
-    const scoreMap = new Map();
-    const videoMap = new Map();
-
-    const addScore = (label, url) => {
-      const key = `${label}||${url}`;
-      if (!scoreMap.has(key)) scoreMap.set(key, { label, url });
-    };
-    const addVideo = (label, url) => {
-      const key = `${label}||${url}`;
-      if (!videoMap.has(key)) videoMap.set(key, { label, url });
-    };
-
-    exactRows.forEach(r => {
-      parseLabeledLinks(r.scoreUrl, "악보").forEach(({label,url}) => addScore(label, url));
-      parseLabeledLinks(r.videoUrl, "영상").forEach(({label,url}) => addVideo(label, url));
-    });
-
-    if (meta){
-      parseLabeledLinks(meta.scoreUrl, "악보").forEach(({label,url}) => addScore(label, url));
-      parseLabeledLinks(meta.linkUrl, "영상").forEach(({label,url}) => addVideo(label, url));
-    }
-
-    const scores = [...scoreMap.values()];
-    const videos = [...videoMap.values()];
-
-    LAST_MEDIA = {
-      scores: new Set(scores.map(x => x.url)),
-      videos: new Set(videos.map(x => x.url)),
-    };
-
-    if (!scores.length && !videos.length){ hideMediaBox(); return; }
-
-    elMediaBox.style.display = "block";
-
-    if (scores.length){
-      elScoreRow.style.display = "flex";
-      elScoreLinks.innerHTML = "";
-      scores.slice(0, 10).forEach(({url,label}) => {
-        elScoreLinks.appendChild(makeLinkChip(url, label));
-      });
-    } else elScoreRow.style.display = "none";
-
-    if (videos.length){
-      elVideoRow.style.display = "flex";
-      elVideoLinks.innerHTML = "";
-      videos.slice(0, 10).forEach(({url,label}) => {
-        elVideoLinks.appendChild(makeLinkChip(url, label));
-      });
-    } else elVideoRow.style.display = "none";
-  }
-
-  // ===== 송품(날짜 클릭 필터) =====
-  function resetPoomState(){
-    POOM_STATE.lastSongKey = "";
-    POOM_STATE.selectedDate = "__all__";
-    POOM_STATE.byDate = new Map();
-    POOM_STATE.dates = [];
-  }
-
-  function hideMetaBox(){
-    elMetaBox.style.display = "none";
-    elMetaSong.textContent = "";
-    elMetaScoreBtn.style.display = "none";
-    elMetaLinkBtn.style.display = "none";
-    elPoomDateTabs.innerHTML = "";
-    elPoomByDate.innerHTML = "";
-    elPoomCommon.textContent = "";
-    resetPoomState();
-  }
-
-  function formatPoomTextToHTML(text){
-    const raw = (text ?? "").toString();
-    const lines = raw.split(/\r?\n/);
-
-    const out = [];
-    for (const line of lines){
-      const t = line.trim();
-      if (!t) continue;
-
-      let m = t.match(/^(싱어|보컬|vocal)\s*[:：]\s*(.*)$/i);
-      if (m){
-        out.push(
-          `<div class="poomLine"><span class="poomTag singer">${escapeHTML(m[1])}</span><span class="poomText">${escapeHTML(m[2] ?? "")}</span></div>`
-        );
-        continue;
-      }
-
-      m = t.match(/^(악기|연주|band|inst|instrument)\s*[:：]\s*(.*)$/i);
-      if (m){
-        out.push(
-          `<div class="poomLine"><span class="poomTag inst">${escapeHTML(m[1])}</span><span class="poomText">${escapeHTML(m[2] ?? "")}</span></div>`
-        );
-        continue;
-      }
-
-      out.push(`<div class="poomLine"><span class="poomText">${escapeHTML(t)}</span></div>`);
-    }
-
-    return out.join("");
-  }
-
-  function poomSortDates(dates){
-    return dates.slice().sort((a,b) => {
-      if (a === "날짜 없음") return 1;
-      if (b === "날짜 없음") return -1;
-      return b.localeCompare(a);
-    });
-  }
-
-  function renderPoomTabs(){
-    elPoomDateTabs.innerHTML = "";
-
-    const makeBtn = (label, value) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "chip chipBtn";
-      b.textContent = label;
-      b.classList.toggle("active", POOM_STATE.selectedDate === value);
-      b.addEventListener("click", () => {
-        POOM_STATE.selectedDate = value;
-        renderPoomTabs();
-        renderPoomBody();
-      });
-      return b;
-    };
-
-    elPoomDateTabs.appendChild(makeBtn("전체", "__all__"));
-    POOM_STATE.dates.forEach(d => elPoomDateTabs.appendChild(makeBtn(d, d)));
-  }
-
-  function renderPoomBody(){
-    elPoomByDate.innerHTML = "";
-
-    const sel = POOM_STATE.selectedDate;
-    const dates = POOM_STATE.dates;
-
-    const renderOneDate = (d) => {
-      const set = POOM_STATE.byDate.get(d);
-      const notes = Array.from(set || []);
-      if (!notes.length) return;
-
-      const dateRow = document.createElement("div");
-      dateRow.className = "poomDateRow";
-      dateRow.innerHTML = `<span class="chip dateChip">${escapeHTML(d)}</span>`;
-      elPoomByDate.appendChild(dateRow);
-
-      const linesWrap = document.createElement("div");
-      linesWrap.className = "poomLines";
-      linesWrap.innerHTML = notes.map(n => formatPoomTextToHTML(n)).join("");
-      elPoomByDate.appendChild(linesWrap);
-    };
-
-    if (sel !== "__all__"){
-      renderOneDate(sel);
-      if (!elPoomByDate.innerHTML){
-        elPoomByDate.innerHTML = `<div class="empty">내용 없음</div>`;
-      }
-      return;
-    }
-
-    if (!dates.length){
-      elPoomByDate.innerHTML = `<div class="empty">내용 없음</div>`;
-      return;
-    }
-    dates.forEach(renderOneDate);
-  }
-
-  function renderPoomForExactSong(exactRows){
-    const qn = norm(elQ.value);
-    if (!qn || !exactRows || !exactRows.length){
-      hideMetaBox();
-      return;
-    }
-
-    if (POOM_STATE.lastSongKey !== qn){
-      POOM_STATE.lastSongKey = qn;
-      POOM_STATE.selectedDate = "__all__";
-    }
-
-    const byDate = new Map();
-    for (const r of exactRows){
-      const poom = trim(r.songPoom);
-      if (!poom) continue;
-      const d = normDateStr(r.date) || "날짜 없음";
-      if (!byDate.has(d)) byDate.set(d, new Set());
-      byDate.get(d).add(poom);
-    }
-
-    const dates = poomSortDates(Array.from(byDate.keys()));
-
-    const meta = META.get(qn);
-    const commonBlocks = [];
-    if (meta){
-      if (trim(meta.note)) commonBlocks.push(trim(meta.note));
-      if (trim(meta.warn)) commonBlocks.push(trim(meta.warn));
-    }
-
-    const hasAny = byDate.size > 0 || commonBlocks.length > 0 || (meta && (trim(meta.scoreUrl) || trim(meta.linkUrl)));
-    if (!hasAny){
-      hideMetaBox();
-      return;
-    }
-
-    POOM_STATE.byDate = byDate;
-    POOM_STATE.dates = dates;
-
-    if (POOM_STATE.selectedDate !== "__all__" && !byDate.has(POOM_STATE.selectedDate)){
-      POOM_STATE.selectedDate = "__all__";
-    }
-
-    elMetaBox.style.display = "block";
-    elMetaSong.textContent = meta?.song || elQ.value;
-
-    if (meta){
-      const sOne = extractFirstUrl(trim(meta.scoreUrl));
-      const lOne = extractFirstUrl(trim(meta.linkUrl));
-
-      if (sOne && !LAST_MEDIA.scores.has(sOne)){
-        elMetaScoreBtn.href = sOne;
-        elMetaScoreBtn.style.display = "inline-flex";
-      } else elMetaScoreBtn.style.display = "none";
-
-      if (lOne && !LAST_MEDIA.videos.has(lOne)){
-        elMetaLinkBtn.href = lOne;
-        elMetaLinkBtn.style.display = "inline-flex";
-      } else elMetaLinkBtn.style.display = "none";
-    } else {
-      elMetaScoreBtn.style.display = "none";
-      elMetaLinkBtn.style.display = "none";
-    }
-
-    renderPoomTabs();
-    renderPoomBody();
-
-    if (commonBlocks.length){
-      elPoomCommon.textContent = commonBlocks.join("\n\n");
-      elPoomCommon.style.display = "block";
-    } else {
-      elPoomCommon.textContent = "";
-      elPoomCommon.style.display = "none";
-    }
-  }
-
-  // ===== 오른쪽 결과 =====
-  function renderResults(){
-    const qn = norm(elQ.value);
-
-    if (!qn){
-      elResultsTable.style.display = "none";
-      elResultsEmpty.style.display = "block";
-      elResultsEmpty.textContent = "검색어를 입력해 주세요.";
-      elResults.innerHTML = "";
-      hideMediaBox();
-      hideMetaBox();
-      return;
-    }
-
-    const matches = DB.filter(r => r.songKey.includes(qn));
-    const exact = matches.filter(r => r.songKey === qn);
-    const picked = exact.length ? exact : matches;
-
-    if (exact.length){
-      renderMediaForExactSong(exact);
-      renderPoomForExactSong(exact);
-    } else {
-      hideMediaBox();
-      hideMetaBox();
-    }
-
-    const group = new Map();
-    for (const r of picked){
-      const k = `${r.partKey}||${r.personKey}`;
-      if (!group.has(k)) group.set(k, { part:r.part, person:r.person, dates:new Set() });
-      const nd = normDateStr(r.date);
-      if (nd) group.get(k).dates.add(nd);
-    }
-
-    const rows = [...group.values()].sort((a,b) => a.part.localeCompare(b.part,"ko"));
-
-    elResults.innerHTML = "";
-    if (!rows.length){
-      elResultsTable.style.display = "none";
-      elResultsEmpty.style.display = "block";
-      elResultsEmpty.textContent = "결과 없음";
-      return;
-    }
-
-    elResultsEmpty.style.display = "none";
-    elResultsTable.style.display = "table";
-
-    rows.forEach(r => {
-      const tr = document.createElement("tr");
-
-      const td1 = document.createElement("td");
-      td1.textContent = r.part;
-
-      const td2 = document.createElement("td");
-      const name = document.createElement("span");
-      name.className = "personLink";
-      name.textContent = r.person;
-      name.addEventListener("click", () => openPersonPanel(r.person));
-      td2.appendChild(name);
-
-      const dates = [...r.dates];
-      if (dates.length){
-        dates.sort((a,b) => b.localeCompare(a));
-        const wrap = document.createElement("div");
-        wrap.className = "dateChips";
-        dates.forEach(d => {
-          const chip = document.createElement("span");
-          chip.className = "chip dateChip";
-          chip.textContent = d;
-          wrap.appendChild(chip);
-        });
-        td2.appendChild(wrap);
-      }
-
-      tr.appendChild(td1);
-      tr.appendChild(td2);
-      elResults.appendChild(tr);
-    });
-  }
-
-  // ===== 왼쪽 곡 목록(필터 적용) =====
-  function activeModeLabel(){
-    if (FILTER.mode === "recent") return "최근 들은곡";
-    if (FILTER.mode === "frequent") return "자주";
-    if (FILTER.mode === "old") return "안들은곡";
-    return "곡 목록";
-  }
-
-  function setActiveModeButtons(){
-    elModeRecent.classList.toggle("active", FILTER.mode === "recent");
-    elModeFrequent.classList.toggle("active", FILTER.mode === "frequent");
-    elModeOld.classList.toggle("active", FILTER.mode === "old");
-  }
-
-  function renderSongList(){
-    const filtered = getFilteredSongs();
-    const qn = norm(elQ.value);
-    const view = qn ? filtered.filter(x => norm(x.song).includes(qn)) : filtered;
-
-    elWeeksChip.textContent = FILTER.weeks + "주";
-    elSongListTitle.textContent = "곡 목록 · " + activeModeLabel() + " (" + FILTER.weeks + "주)";
-    elFilterCount.textContent = filtered.length + "곡";
-    elSongCount.textContent = view.length.toString();
-
-    elSongs.innerHTML = view.length ? "" : `<div class="empty">목록 없음</div>`;
-
-    const cutoff = cutoffTsByWeeks(FILTER.weeks);
-
-    view.slice(0, 600).forEach(x => {
-      const div = document.createElement("div");
-      div.className = "item";
-
-      let rightChip = "클릭";
-      let rightChipClass = "chip";
-
-      if (!x.info || x.info.lastTs === null){
-        rightChip = "날짜 없음";
-        rightChipClass = "chip warn";
-      } else {
-        if (FILTER.mode === "recent"){
-          rightChip = "마지막 " + fmtYmdKST(x.info.lastTs);
-          rightChipClass = "chip ok";
-        } else if (FILTER.mode === "frequent"){
-          const c = countInWindow(x.info.tsList, cutoff);
-          rightChip = FILTER.weeks + "주 " + c + "회";
-          rightChipClass = "chip ok";
-        } else if (FILTER.mode === "old"){
-          rightChip = "마지막 " + fmtYmdKST(x.info.lastTs);
-          rightChipClass = "chip warn";
-        }
-      }
-
-      div.innerHTML = `<span>${highlight(x.song, qn)}</span><span class="${rightChipClass}">${escapeHTML(rightChip)}</span>`;
-      div.addEventListener("click", () => {
-        elQ.value = x.song;
-        closeAC();
-        renderAll();
-        elQ.focus();
-      });
-      elSongs.appendChild(div);
-    });
-
-    if (view.length > 600){
-      const more = document.createElement("div");
-      more.className = "empty";
-      more.textContent = "목록이 많아 일부만 표시됩니다.";
-      elSongs.appendChild(more);
-    }
-  }
-
-  // ===== 자동완성 =====
-  let acItems = [];
-  let acIndex = -1;
-
-  function openAC(){
-    if (!acItems.length) return closeAC();
-    elAC.style.display = "block";
-    elAC.setAttribute("aria-hidden","false");
-  }
-  function closeAC(){
-    elAC.style.display = "none";
-    elAC.setAttribute("aria-hidden","true");
-    acIndex = -1;
-  }
-  function scrollACIntoView(){
-    const rows = elACBody.querySelectorAll(".acRow");
-    const row = rows[acIndex];
-    if (!row) return;
-    const top = row.offsetTop;
-    const bottom = top + row.offsetHeight;
-    if (top < elACBody.scrollTop) elACBody.scrollTop = top;
-    else if (bottom > elACBody.scrollTop + elACBody.clientHeight) elACBody.scrollTop = bottom - elACBody.clientHeight;
-  }
-  function chooseAC(i){
-    const item = acItems[i];
-    if (!item) return;
-    elQ.value = item;
-    closeAC();
-    renderAll();
-    elQ.focus();
-  }
-  function renderAC(){
-    const qn = norm(elQ.value);
-    if (!qn){
-      closeAC();
-      elACBody.innerHTML = "";
-      elACMeta.textContent = "0";
-      return;
-    }
-    acItems = SONGS.filter(s => norm(s).includes(qn)).slice(0, 10);
-    elACMeta.textContent = String(acItems.length);
-    if (!acItems.length) return closeAC();
-
-    openAC();
-    elACBody.innerHTML = "";
-    acItems.forEach((song, idx) => {
-      const row = document.createElement("div");
-      row.className = "acRow" + (idx === acIndex ? " active" : "");
-      row.innerHTML = `<span>${highlight(song, qn)}</span><span class="chip">Enter</span>`;
-      row.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        chooseAC(idx);
-      });
-      elACBody.appendChild(row);
-    });
-  }
-  function stepAC(dir){
-    if (elAC.style.display !== "block") return;
-    if (!acItems.length) return;
-    acIndex = acIndex + dir;
-    if (acIndex < 0) acIndex = acItems.length - 1;
-    if (acIndex >= acItems.length) acIndex = 0;
-
-    const rows = elACBody.querySelectorAll(".acRow");
-    rows.forEach((r,i) => r.classList.toggle("active", i === acIndex));
-    scrollACIntoView();
-  }
-
-  // ===== 담당자 패널 =====
-  function openPersonPanel(personName){
-    const pk = norm(personName);
-    if (!pk) return;
-
-    const rows = DB.filter(r => r.personKey === pk);
-
-    const songMap = new Map();
-    for (const r of rows){
-      const sk = r.songKey;
-      if (!songMap.has(sk)) songMap.set(sk, { song:r.song, parts:new Set() });
-      songMap.get(sk).parts.add(r.part);
-    }
-
-    const songs = [...songMap.values()].sort((a,b) => a.song.localeCompare(b.song,"ko"));
-
-    elPPName.textContent = personName;
-    elPPSongCount.textContent = songs.length + "곡";
-    elPPRowCount.textContent = rows.length + "행";
-
-    elPPBody.innerHTML = "";
-    if (!songs.length){
-      elPPBody.innerHTML = `<div class="empty">기록 없음</div>`;
-    } else {
-      songs.forEach(s => {
-        const div = document.createElement("div");
-        div.className = "item";
-        const parts = [...s.parts].join(", ");
-        div.innerHTML = `<span>${escapeHTML(s.song)}</span><span class="chip">${escapeHTML(parts || "보기")}</span>`;
-        div.addEventListener("click", () => {
-          elQ.value = s.song;
-          closeAC();
-          renderAll();
-          setView("search");
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        });
-        elPPBody.appendChild(div);
-      });
-    }
-
-    elPersonPanel.style.display = "block";
-  }
-  function closePersonPanel(){
-    elPersonPanel.style.display = "none";
-    elPPBody.innerHTML = "";
-  }
-
-  // ===== 콘티 =====
-  function uniqSongs(arr){
-    const seen = new Set();
-    const out = [];
-    for (const s of arr){
-      const t = trim(s);
-      if (!t) continue;
-      const k = norm(t);
-      if (seen.has(k)) continue;
-      seen.add(k);
-      out.push(t);
-    }
-    return out;
-  }
-
-  function isHeaderRowForDays(row){
-    const hs = row.map(v => norm(v));
-    const hasDay = hs.some(h => /^(\d+)일차$/.test(h));
-    return hasDay;
-  }
-
-  function buildMultiDaySetlist(rows){
-    if (!rows || rows.length < 2) return null;
-
-    const header = rows[0].map(v => trim(v ?? ""));
-    const headerN = header.map(v => norm(v));
-
-    if (!isHeaderRowForDays(header)) return null;
-
-    function idxOfExact(label){
-      const nl = norm(label);
-      let idx = headerN.findIndex(h => h === nl);
-      if (idx >= 0) return idx;
-      idx = headerN.findIndex(h => h.includes(nl));
-      return idx;
-    }
-
-    const days = [];
-    for (let n=1; n<=6; n++){
-      const dayTitle = `${n}일차`;
-      const songCol = idxOfExact(dayTitle);
-      if (songCol < 0) continue;
-
-      let scoreCol = idxOfExact(`${n}일차악보`);
-      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차 악보`);
-      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차링크`);
-      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차 링크`);
-      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차url`);
-      if (scoreCol < 0) scoreCol = idxOfExact(`${n}일차 url`);
-
-      if (scoreCol < 0 && headerN[songCol + 1]){
-        const hn = headerN[songCol + 1];
-        if (hn.includes("악보") || hn.includes("링크") || hn.includes("url")) scoreCol = songCol + 1;
-      }
-
-      const songsRaw = [];
-      let url = "";
-
-      for (let i=1;i<rows.length;i++){
-        const r = rows[i] || [];
-        const s = trim(r[songCol] ?? "");
-        if (s && norm(s) !== norm("곡명")) songsRaw.push(s);
-
-        if (!url && scoreCol >= 0){
-          const u = extractFirstUrl(r[scoreCol] ?? "");
-          if (u) url = u;
-        }
-      }
-
-      const songs = uniqSongs(songsRaw);
-      const id = `day${n}`;
-      if (songs.length || url){
-        days.push({ id, title: dayTitle, songs, url });
-      }
-    }
-
-    if (!days.length) return null;
-    return { type:"multi", days };
-  }
-
-  async function loadSetlistFromSheet(sheetName){
-    const sheetId = extractSheetId(FIXED_SHEET_URL);
-    const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
-
-    // 1) 멀티일차(여름/겨울) 감지용 와이드 쿼리: 실패해도 죽지 말고 그냥 넘어가게
-    try{
-      const urlWide = base + "&sheet=" + encodeURIComponent(sheetName) +
-        "&tq=" + encodeURIComponent(
-          "select A,B,C,D,E,F where A is not null or B is not null or C is not null or D is not null or E is not null or F is not null"
-        );
-      const pWide = await loadGvizJSONP(urlWide);
-      const rowsWide = pWide.rows || [];
-
-      const multi = buildMultiDaySetlist(rowsWide);
-      if (multi) return multi;
-    } catch(e){
-      // ✅ 주일콘티처럼 A,B만 있는 시트면 여기서 에러나도 정상(그냥 싱글로 처리)
-    }
-
-    // 2) 싱글(주일콘티)용: headers=1로 1행 헤더를 데이터에서 제외
-    const url = base + "&sheet=" + encodeURIComponent(sheetName) +
-      "&headers=1" +
-      "&tq=" + encodeURIComponent("select A,B where A is not null or B is not null");
-
-    const p = await loadGvizJSONP(url);
-
-    const songsRaw = (p.rows || []).map(r => trim(r[0] ?? "")).filter(Boolean);
-    const cleanedSongs = uniqSongs(songsRaw);
-
-    let setlistUrl = "";
-    for (const r of (p.rows || [])){
-      const u = extractFirstUrl(r[1] ?? "");
-      if (u){ setlistUrl = u; break; }
-    }
-
-    return { type:"single", songs: cleanedSongs, url: setlistUrl };
-  }
-
-  async function loadAllSetlists(){
-    for (const def of SETLIST_TABS){
-      try{
-        const data = await loadSetlistFromSheet(def.sheet);
-        SETLIST_CACHE.set(def.key, data);
-      } catch(e){
-        SETLIST_CACHE.set(def.key, { type:"single", songs: [], url: "" });
-      }
-    }
-  }
-
-  function slRenderTabs(){
-    elSlTabs.innerHTML = "";
-    SETLIST_TABS.forEach(def => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "miniBtn";
-      b.textContent = def.title;
-      b.style.borderRadius = "999px";
-      if (def.key === activeSetlistKey) b.classList.add("active");
-      b.addEventListener("click", () => {
-        activeSetlistKey = def.key;
-        activeSetlistDayId = "";
-        slRenderTabs();
-        slRenderList();
-      });
-      elSlTabs.appendChild(b);
-    });
-  }
-
-  function getActiveSetlistDef(){
-    return SETLIST_TABS.find(d => d.key === activeSetlistKey);
-  }
-
-  function getActiveSetlistData(){
-    return SETLIST_CACHE.get(activeSetlistKey) || { type:"single", songs:[], url:"" };
-  }
-
-  function getActiveDay(data){
-    if (!data || data.type !== "multi") return null;
-    const days = data.days || [];
-    if (!days.length) return null;
-
-    if (!activeSetlistDayId || !days.some(d => d.id === activeSetlistDayId)){
-      activeSetlistDayId = days[0].id;
-    }
-    return days.find(d => d.id === activeSetlistDayId) || days[0];
-  }
-
-  function slRenderDayTabs(data){
-    if (!data || data.type !== "multi" || !(data.days || []).length){
-      elSlDayTabs.style.display = "none";
-      elSlDayTabs.innerHTML = "";
-      return;
-    }
-
-    elSlDayTabs.style.display = "flex";
-    elSlDayTabs.innerHTML = "";
-
-    const days = data.days || [];
-    const active = getActiveDay(data);
-
-    days.forEach(d => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "miniBtn";
-      b.textContent = d.title;
-      b.style.borderRadius = "999px";
-      if (active && d.id === active.id) b.classList.add("active");
-      b.addEventListener("click", () => {
-        activeSetlistDayId = d.id;
-        slRenderDayTabs(data);
-        slRenderList();
-      });
-      elSlDayTabs.appendChild(b);
-    });
-  }
-
-  function slRenderList(){
-    const def = getActiveSetlistDef();
-    const data = getActiveSetlistData();
-
-    let title = def ? def.title : activeSetlistKey;
-    let arr = [];
-    let url = "";
-
-    if (data.type === "multi"){
-      slRenderDayTabs(data);
-      const day = getActiveDay(data);
-      if (day){
-        title = title + " · " + (day.title || "");
-        arr = day.songs || [];
-        url = day.url || "";
-      }
-    } else {
-      slRenderDayTabs(null);
-      arr = data.songs || [];
-      url = data.url || "";
-    }
-
-    elSlTitle.textContent = title;
-    elSlCount.textContent = String(arr.length);
-    elSlBadge.textContent = (def ? def.title : "-");
-
-    if (url){
-      elSlScoreBtn.href = url;
-      elSlScoreBtn.style.display = "inline-flex";
-    } else {
-      elSlScoreBtn.style.display = "none";
-      elSlScoreBtn.removeAttribute("href");
-    }
-
-    elSlBody.innerHTML = "";
-    if (!arr.length){
-      elSlBody.innerHTML = `<div class="empty">목록 없음</div>`;
-      return;
-    }
-
-    arr.forEach((song, idx) => {
-      const row = document.createElement("div");
-      row.className = "item";
-      row.innerHTML = `<span><b style="margin-right:8px;">${idx+1}.</b>${escapeHTML(song)}</span><span class="chip">검색</span>`;
-      row.addEventListener("click", () => {
-        elQ.value = song;
-        closeAC();
-        renderAll();
-        setView("search");
-      });
-      elSlBody.appendChild(row);
-    });
-  }
-
-  elSlCopyBtn.addEventListener("click", async () => {
-    const def = getActiveSetlistDef();
-    const data = getActiveSetlistData();
-
-    let title = def ? def.title : activeSetlistKey;
-    let arr = [];
-    let url = "";
-
-    if (data.type === "multi"){
-      const day = getActiveDay(data);
-      if (day){
-        title = title + " · " + (day.title || "");
-        arr = day.songs || [];
-        url = day.url || "";
-      }
-    } else {
-      arr = data.songs || [];
-      url = data.url || "";
-    }
-
-    const urlLine = url ? `악보: ${url}\n` : "";
-    const text = [title, urlLine, ...arr.map((s,i) => `${i+1}. ${s}`)]
-      .filter(Boolean)
-      .join("\n");
-
-    try{
-      await navigator.clipboard.writeText(text);
-      setStatus("복사 완료", true, false);
-    } catch(e){
-      prompt("복사(Ctrl+C)", text);
-    }
-  });
-
-  elSlReloadBtn.addEventListener("click", async () => {
-    setStatus("불러오는 중…", true, true);
-    await loadAllSetlists();
-    slRenderTabs();
-    slRenderList();
-    setStatus("완료", true, false);
-  });
-
-  // ===== 공지 =====
-  function isHeaderLikeNotice(n){
-    const a = norm(n.title);
-    const b = norm(n.body);
-    const c = norm(n.link);
-    const d = norm(n.date);
-    const set = new Set([a,b,c,d].filter(Boolean));
-
-    const hasTitle = set.has(norm("제목"));
-    const hasBody  = set.has(norm("내용"));
-    const hasLink  = set.has(norm("링크"));
-    const hasDate  = set.has(norm("날짜")) || set.has(norm("일자"));
-
-    return (hasTitle && (hasBody || hasLink || hasDate)) || (hasDate && hasTitle) || (hasLink && hasTitle);
-  }
-
-  async function loadNoticesFromSheet(){
-    const sheetId = extractSheetId(FIXED_SHEET_URL);
-    const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
-    const url = base + "&sheet=" + encodeURIComponent(NOTICE_SHEET_NAME) + "&tq=" + encodeURIComponent("select A,B,C,D where A is not null or B is not null or C is not null or D is not null");
-
-    const p = await loadGvizJSONP(url);
-    const cols = p.cols || [];
-    const rows = p.rows || [];
-
-    const titleKeys = ["제목","title","subject"].map(norm);
-    const bodyKeys  = ["내용","body","text","message","공지내용"].map(norm);
-    const linkKeys  = ["링크","url","link"].map(norm);
-    const dateKeys  = ["날짜","일자","date","day"].map(norm);
-
-    let header = cols.map(h => norm(h));
-    let idxTitle = findCol(header, titleKeys);
-    let idxBody  = findCol(header, bodyKeys);
-    let idxLink  = findCol(header, linkKeys);
-    let idxDate  = findCol(header, dateKeys);
-
-    let startRow = 0;
-
-    const labelsBad = header.every(h => !h || /^[a-z]$/.test(h));
-    if ((idxTitle < 0 || idxBody < 0) && rows.length && labelsBad){
-      const first = rows[0].map(v => norm(v));
-      const t2 = findCol(first, titleKeys);
-      const b2 = findCol(first, bodyKeys);
-      const l2 = findCol(first, linkKeys);
-      const d2 = findCol(first, dateKeys);
-      if (t2 >= 0 && b2 >= 0){
-        idxTitle = t2; idxBody = b2; idxLink = l2; idxDate = d2;
-        startRow = 1;
-      }
-    }
-
-    if (idxTitle < 0) idxTitle = 0;
-    if (idxBody  < 0) idxBody  = 1;
-    if (idxLink  < 0) idxLink  = 2;
-    if (idxDate  < 0) idxDate  = 3;
-
-    let list = [];
-    for (let i=startRow;i<rows.length;i++){
-      const r = rows[i] || [];
-      const rawTitle = trim(r[idxTitle] ?? "");
-      const rawBody  = trim(r[idxBody] ?? "");
-      const rawLink  = trim(r[idxLink] ?? "");
-      const rawDate  = trim(r[idxDate] ?? "");
-      if (!rawTitle && !rawBody && !rawLink && !rawDate) continue;
-
-      list.push({
-        title: rawTitle,
-        body: rawBody,
-        link: rawLink,
-        date: normDateStr(rawDate),
-      });
-    }
-
-    list = list.filter(n => !isHeaderLikeNotice(n));
-
-    list.sort((a,b) => {
-      const ad = normDateStr(a.date);
-      const bd = normDateStr(b.date);
-      if (ad && bd) return bd.localeCompare(ad);
-      if (ad && !bd) return -1;
-      if (!ad && bd) return 1;
-      return 0;
-    });
-
-    NOTICE_FROM_SHEET = true;
-    return list;
-  }
-
-  function openNoticeModal(n){
-    elNoticeModalTitle.textContent = n.title || "공지";
-    elNoticeModalMeta.textContent = n.date ? ("날짜: " + normDateStr(n.date)) : "";
-    elNoticeModalBody.textContent = n.body || "";
-
-    elNoticeModalActions.innerHTML = "";
-    const link = trim(n.link);
-    if (link && /^https?:\/\//i.test(link)){
-      const a = document.createElement("a");
-      a.className = "miniBtn";
-      a.href = link;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.textContent = "링크";
-      elNoticeModalActions.appendChild(a);
-    }
-
-    const closeBtn = document.createElement("button");
-    closeBtn.className = "miniBtn";
-    closeBtn.type = "button";
-    closeBtn.textContent = "닫기";
-    closeBtn.addEventListener("click", closeNoticeModal);
-    elNoticeModalActions.appendChild(closeBtn);
-
-    elNoticeModalDim.classList.add("show");
-    elNoticeModalDim.setAttribute("aria-hidden","false");
-  }
-
-  function closeNoticeModal(){
-    elNoticeModalDim.classList.remove("show");
-    elNoticeModalDim.setAttribute("aria-hidden","true");
-  }
-
-  elNoticeModalClose.addEventListener("click", closeNoticeModal);
-  elNoticeModalDim.addEventListener("click", (e) => {
-    if (e.target === elNoticeModalDim) closeNoticeModal();
-  });
-
-  function renderNotices(){
-    elNoticeCount.textContent = NOTICE_CACHE.length.toString();
-    elNoticeChip.textContent = NOTICE_CACHE.length + "개";
-    elNoticeSourceChip.textContent = "공지사항";
-    elNoticeBody.innerHTML = "";
-
-    if (!NOTICE_CACHE.length){
-      elNoticeBody.innerHTML = `<div class="empty">공지 없음</div>`;
-      return;
-    }
-
-    NOTICE_CACHE.forEach((n) => {
-      const div = document.createElement("div");
-      div.className = "item";
-
-      const left = document.createElement("div");
-      left.style.display = "flex";
-      left.style.flexDirection = "column";
-      left.style.gap = "4px";
-
-      const title = document.createElement("div");
-      title.style.fontWeight = "900";
-      title.textContent = n.title || "(제목 없음)";
-      left.appendChild(title);
-
-      const meta = document.createElement("div");
-      meta.className = "muted";
-      meta.textContent = n.date ? normDateStr(n.date) : "";
-      left.appendChild(meta);
-
-      const right = document.createElement("span");
-      right.className = "chip";
-      right.textContent = "보기";
-
-      div.appendChild(left);
-      div.appendChild(right);
-
-      div.addEventListener("click", () => openNoticeModal(n));
-      elNoticeBody.appendChild(div);
-    });
-  }
-
-  elNoticeReload.addEventListener("click", async () => {
-    setStatus("불러오는 중…", true, true);
-    try{
-      NOTICE_CACHE = await loadNoticesFromSheet();
-      renderNotices();
-      setStatus("완료", true, false);
-    } catch(e){
-      NOTICE_FROM_SHEET = false;
-      NOTICE_CACHE = [];
-      renderNotices();
-      setStatus("불러오기 실패\n" + e.message, false, false);
-    }
-  });
-
-  // ===== 캘린더(달력형) =====
-  function isHeaderLikeCalendar(n){
-    const a = norm(n.date);
-    const b = norm(n.title);
-    const c = norm(n.body);
-    const d = norm(n.link);
-    const set = new Set([a,b,c,d].filter(Boolean));
-    const hasDate  = set.has(norm("날짜")) || set.has(norm("일자")) || set.has(norm("date"));
-    const hasTitle = set.has(norm("제목")) || set.has(norm("title"));
-    const hasBody  = set.has(norm("내용")) || set.has(norm("body"));
-    const hasLink  = set.has(norm("링크")) || set.has(norm("link"));
-    return (hasDate && hasTitle) || (hasDate && (hasBody || hasLink));
-  }
-
-  async function loadCalendarFromSheet(){
-    const sheetId = extractSheetId(FIXED_SHEET_URL);
-    const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
-    const url = base + "&sheet=" + encodeURIComponent(CALENDAR_SHEET_NAME) + "&tq=" + encodeURIComponent("select A,B,C,D where A is not null or B is not null or C is not null or D is not null");
-
-    const p = await loadGvizJSONP(url);
-    const cols = p.cols || [];
-    const rows = p.rows || [];
-
-    const dateKeys  = ["날짜","일자","date","day"].map(norm);
-    const titleKeys = ["제목","title","subject","일정","name"].map(norm);
-    const bodyKeys  = ["내용","body","text","memo","메모","설명","desc","description"].map(norm);
-    const linkKeys  = ["링크","url","link"].map(norm);
-
-    let header = cols.map(h => norm(h));
-    let idxDate  = findCol(header, dateKeys);
-    let idxTitle = findCol(header, titleKeys);
-    let idxBody  = findCol(header, bodyKeys);
-    let idxLink  = findCol(header, linkKeys);
-
-    let startRow = 0;
-
-    const labelsBad = header.every(h => !h || /^[a-z]$/.test(h));
-    if ((idxDate < 0 || idxTitle < 0) && rows.length && labelsBad){
-      const first = rows[0].map(v => norm(v));
-      const d2 = findCol(first, dateKeys);
-      const t2 = findCol(first, titleKeys);
-      const b2 = findCol(first, bodyKeys);
-      const l2 = findCol(first, linkKeys);
-      if (d2 >= 0 && t2 >= 0){
-        idxDate = d2; idxTitle = t2; idxBody = b2; idxLink = l2;
-        startRow = 1;
-      }
-    }
-
-    if (idxDate  < 0) idxDate  = 0;
-    if (idxTitle < 0) idxTitle = 1;
-    if (idxBody  < 0) idxBody  = 2;
-    if (idxLink  < 0) idxLink  = 3;
-
-    let list = [];
-    for (let i=startRow;i<rows.length;i++){
-      const r = rows[i] || [];
-      const rawDate  = trim(r[idxDate] ?? "");
-      const rawTitle = trim(r[idxTitle] ?? "");
-      const rawBody  = trim(r[idxBody] ?? "");
-      const rawLink  = trim(r[idxLink] ?? "");
-      if (!rawDate && !rawTitle && !rawBody && !rawLink) continue;
-
-      const date = normDateStr(rawDate);
-      list.push({
-        date,
-        title: rawTitle,
-        body: rawBody,
-        link: rawLink,
-      });
-    }
-
-    list = list.filter(x => !isHeaderLikeCalendar(x));
-
-    list.sort((a,b) => {
-      const ad = normDateStr(a.date);
-      const bd = normDateStr(b.date);
-      if (ad && bd) return ad.localeCompare(bd);
-      if (ad && !bd) return -1;
-      if (!ad && bd) return 1;
-      return 0;
-    });
-
-    return list;
-  }
-
-  function buildCalendarIndex(){
-    CAL_BY_DATE = new Map();
-    for (const ev of CAL_CACHE){
-      const d = normDateStr(ev.date);
-      if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
-      if (!CAL_BY_DATE.has(d)) CAL_BY_DATE.set(d, []);
-      CAL_BY_DATE.get(d).push(ev);
-    }
-  }
-
-  function daysInMonthUTC(y, m0){
-    return new Date(Date.UTC(y, m0 + 1, 0)).getUTCDate();
-  }
-
-  function weekdayIndexKST(y, m0, d){
-    const dt = new Date(Date.UTC(y, m0, d, 0, 0, 0));
-    const w = new Intl.DateTimeFormat("en-US", { timeZone: KST_TZ, weekday: "short" }).format(dt);
-    const map = { Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 };
-    return (map[w] ?? 0);
-  }
-
-  function ymd(y,m0,d){
-    const mm = String(m0+1).padStart(2,"0");
-    const dd = String(d).padStart(2,"0");
+// ============================================================
+// 설정
+// ============================================================
+const FIXED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1fyGPILf7sxYSBLx1gq7hFeZwV0enO0F3ufh-9DmbJp0/edit?gid=1851883768#gid=1851883768';
+const FIXED_GID = '1851883768';
+const FIXED_SHEET_NAME = 'DB';
+const META_SHEET_NAME = 'META';
+const META_GID = '';
+
+// ✅ 콘티 탭 — 여기만 수정하면 새 탭이 자동 반영됩니다
+const SETLIST_TABS = [
+  { key: "sunday",      title: "주일 콘티",           sheet: "주일콘티" },
+  { key: "winter2026",  title: "2026 겨울수련회 콘티", sheet: "2026겨울수련회콘티" },
+  { key: "summer2026",  title: "2026 여름수련회 콘티", sheet: "2026여름수련회콘티" },
+];
+
+const NOTICE_SHEET_NAME   = "공지사항";
+const CALENDAR_SHEET_NAME = "캘린더";
+
+const KST_TZ           = "Asia/Seoul";
+const KST_OFFSET_HOURS = 9;
+
+// ✅ 캐시 TTL (밀리초) — 10분
+const CACHE_TTL = 10 * 60 * 1000;
+const CACHE_PREFIX = "shekinah_v2_";
+
+// ============================================================
+// 캐시 유틸 (localStorage)
+// ============================================================
+function saveCache(key, data) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ ts: Date.now(), data }));
+  } catch(e) {}
+}
+function loadCache(key) {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || !obj.ts || !obj.data) return null;
+    if (Date.now() - obj.ts > CACHE_TTL) return null;
+    return obj.data;
+  } catch(e) { return null; }
+}
+function clearCache() {
+  try {
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(CACHE_PREFIX))
+      .forEach(k => localStorage.removeItem(k));
+  } catch(e) {}
+}
+
+// ============================================================
+// 유틸 함수
+// ============================================================
+function norm(s){ return (s??"").toString().replace(/[\s\u200B\u200C\u200D\uFEFF]+/g,"").toLowerCase(); }
+const trim = s => (s??"").toString().trim();
+
+function nowKSTParts(){
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US",{
+    timeZone:KST_TZ, year:"numeric", month:"2-digit", day:"2-digit",
+    hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false,
+  }).formatToParts(now);
+  const map = {};
+  for(const p of parts) if(p.type!=="literal") map[p.type]=p.value;
+  return { y:parseInt(map.year,10), m:parseInt(map.month,10), d:parseInt(map.day,10),
+           hh:parseInt(map.hour,10), mm:parseInt(map.minute,10), ss:parseInt(map.second,10) };
+}
+function nowKSTTs(){
+  const p = nowKSTParts();
+  return Date.UTC(p.y, p.m-1, p.d, p.hh - KST_OFFSET_HOURS, p.mm, p.ss);
+}
+function fmtYmdKST(ts){
+  if(!ts) return "";
+  return new Intl.DateTimeFormat("en-CA",{ timeZone:KST_TZ, year:"numeric", month:"2-digit", day:"2-digit" }).format(new Date(ts));
+}
+
+// ✅ 한국어 날짜 형식("2025년 1월 5일") 추가
+function normDateStr(d){
+  const s = trim((d??"").toString());
+  if(!s) return "";
+
+  // 한국어 날짜 형식: 2025년 1월 5일
+  let m = s.match(/^(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+  if(m) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
+
+  m = s.match(/Date\(\s*(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/i);
+  if(m){
+    const y=m[1], mm=String(parseInt(m[2],10)+1).padStart(2,"0"), dd=String(parseInt(m[3],10)).padStart(2,"0");
     return `${y}-${mm}-${dd}`;
   }
 
-  function renderCalendar(){
-    const y = CAL_MONTH.y;
-    const m0 = CAL_MONTH.m;
+  m = s.match(/^(\d{4})\s*,\s*(\d{1,2})\s*,\s*(\d{1,2})/);
+  if(m) return `${m[1]}-${String(parseInt(m[2],10)).padStart(2,"0")}-${String(parseInt(m[3],10)).padStart(2,"0")}`;
 
-    const mm = String(m0+1).padStart(2,"0");
-    elCalMonthLabel.textContent = `${y}-${mm}`;
+  m = s.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+  if(m) return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;
 
-    const monthStart = `${y}-${mm}-01`;
-    const monthEnd = `${y}-${mm}-${String(daysInMonthUTC(y,m0)).padStart(2,"0")}`;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return s;
+}
 
-    let cnt = 0;
-    for (const [d, arr] of CAL_BY_DATE.entries()){
-      if (d >= monthStart && d <= monthEnd) cnt += arr.length;
+function toDateTs(v){
+  const s = normDateStr(v);
+  if(!s) return null;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
+    const [y,mo,d] = s.split("-").map(n=>parseInt(n,10));
+    const ts = Date.UTC(y, mo-1, d, -KST_OFFSET_HOURS, 0, 0);
+    return Number.isFinite(ts)?ts:null;
+  }
+  return null;
+}
+
+function escapeHTML(s){
+  return (s??"").toString()
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function highlight(text, queryNorm){
+  if(!queryNorm) return escapeHTML(text);
+  const raw=(text??"").toString();
+  const rawNS=raw.replace(/[\s\u200B\u200C\u200D\uFEFF]+/g,"");
+  const idx=rawNS.toLowerCase().indexOf(queryNorm);
+  if(idx<0) return escapeHTML(raw);
+  let start=-1,end=-1,count=0;
+  for(let i=0;i<raw.length;i++){
+    const ch=raw[i];
+    if(/[\s\u200B\u200C\u200D\uFEFF]/.test(ch)) continue;
+    if(count===idx) start=i;
+    if(count===idx+queryNorm.length-1){ end=i; break; }
+    count++;
+  }
+  if(start<0||end<0) return escapeHTML(raw);
+  return escapeHTML(raw.slice(0,start))+"<mark>"+escapeHTML(raw.slice(start,end+1))+"</mark>"+escapeHTML(raw.slice(end+1));
+}
+function uniqueBy(arr,keyFn){
+  const seen=new Set(), out=[];
+  for(const x of arr){ const k=keyFn(x); if(seen.has(k)) continue; seen.add(k); out.push(x); }
+  return out;
+}
+function extractSheetId(url){
+  const m=url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return m?m[1]:null;
+}
+function parseLabeledLinks(cellText,defaultLabel){
+  const lines=(cellText??"").toString().split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  const out=[];
+  for(const line of lines){
+    const m=line.match(/(https?:\/\/\S+)/i);
+    if(!m) continue;
+    const url=m[1].trim();
+    const label=line.replace(url,"").trim()||defaultLabel;
+    out.push({label,url});
+  }
+  return out;
+}
+function extractFirstUrl(text){
+  const m=(text??"").toString().match(/https?:\/\/\S+/i);
+  return m?m[0].trim():"";
+}
+
+// ============================================================
+// ✅ GVIZ JSONP — 카운터 기반(충돌 방지)
+// ============================================================
+let _gvizIdx = 0;
+function loadGvizJSONP(url){
+  return new Promise((resolve,reject)=>{
+    const cbName = "__gviz_cb_" + (++_gvizIdx);
+    const timeout = setTimeout(()=>{ cleanup(); reject(new Error("타임아웃: GVIZ 응답 없음")); },12000);
+    let script=null;
+    function cleanup(){
+      clearTimeout(timeout);
+      try{ delete window[cbName]; }catch(e){}
+      if(script&&script.parentNode) script.parentNode.removeChild(script);
     }
-    elCalCount.textContent = String(cnt);
-
-    elCalCells.innerHTML = "";
-
-    const firstW = weekdayIndexKST(y, m0, 1);
-    const dimPrevDays = firstW;
-
-    const prevY = (m0 === 0) ? (y - 1) : y;
-    const prevM = (m0 === 0) ? 11 : (m0 - 1);
-    const prevLast = daysInMonthUTC(prevY, prevM);
-
-    const curLast = daysInMonthUTC(y, m0);
-
-    const totalCells = 42;
-    const today = (() => {
-      const p = nowKSTParts();
-      return ymd(p.y, p.m-1, p.d);
-    })();
-
-    const mobile = isCalMobile();
-
-    for (let i=0;i<totalCells;i++){
-      let cellY=y, cellM=m0, cellD=0;
-      let inMonth = true;
-
-      const dayNum = i - dimPrevDays + 1;
-
-      if (dayNum <= 0){
-        inMonth = false;
-        cellY = prevY; cellM = prevM;
-        cellD = prevLast + dayNum;
-      } else if (dayNum > curLast){
-        inMonth = false;
-        const nextY = (m0 === 11) ? (y + 1) : y;
-        const nextM = (m0 === 11) ? 0 : (m0 + 1);
-        cellY = nextY; cellM = nextM;
-        cellD = dayNum - curLast;
-      } else {
-        cellD = dayNum;
-      }
-
-      const dKey = ymd(cellY, cellM, cellD);
-      const evs = CAL_BY_DATE.get(dKey) || [];
-
-      const cell = document.createElement("div");
-      cell.className = "calCell" + (inMonth ? "" : " dim") + (dKey === today ? " today" : "");
-      cell.dataset.date = dKey;
-
-      const top = document.createElement("div");
-      top.className = "calDayRow";
-      top.innerHTML = `<span class="calDayNum">${cellD}</span><span class="calTodayDot" aria-hidden="true"></span>`;
-      cell.appendChild(top);
-
-      const eventsWrap = document.createElement("div");
-      eventsWrap.className = "calEvents";
-
-      if (evs.length){
-        if (mobile){
-          const dots = document.createElement("div");
-          dots.className = "calDots";
-          const maxDots = 6;
-
-          const showDots = Math.min(evs.length, maxDots);
-          for (let k=0;k<showDots;k++){
-            const dot = document.createElement("span");
-            dot.className = "calDot";
-            dot.setAttribute("aria-hidden","true");
-            dots.appendChild(dot);
-          }
-
-          if (evs.length > maxDots){
-            const plus = document.createElement("span");
-            plus.className = "calPlus";
-            plus.textContent = `+${evs.length - maxDots}`;
-            dots.appendChild(plus);
-          }
-
-          dots.title = evs.map(e => (e.title || "일정").toString()).slice(0, 8).join(" / ");
-          eventsWrap.appendChild(dots);
-        } else {
-          const maxShow = 3;
-          evs.slice(0, maxShow).forEach(ev => {
-            const chip = document.createElement("div");
-            chip.className = "calChip";
-            chip.title = ev.title || "일정";
-            chip.textContent = (ev.title || "일정").toString();
-            chip.addEventListener("click", (e) => {
-              e.stopPropagation();
-              openCalendarEventModal(ev, dKey);
-            });
-            eventsWrap.appendChild(chip);
-          });
-
-          if (evs.length > maxShow){
-            const more = document.createElement("div");
-            more.className = "calMore";
-            more.textContent = `+${evs.length - maxShow}`;
-            eventsWrap.appendChild(more);
-          }
+    window[cbName]=(payload)=>{
+      try{
+        cleanup();
+        if(payload&&payload.status&&payload.status!=="ok"){
+          const msg=(payload.errors&&payload.errors.length)?payload.errors.map(e=>e.message).join(" / "):("GVIZ status="+payload.status);
+          reject(new Error(msg)); return;
         }
-      }
+        const table=payload.table;
+        const cols=table.cols.map(c=>(c.label||"").trim());
+        const rows=table.rows.map(r=>r.c.map(c=>(c&&c.v!==null&&c.v!==undefined)?String(c.v):""));
+        resolve({cols,rows});
+      }catch(e){ reject(new Error("파싱 실패: "+e.message)); }
+    };
+    window.google=window.google||{};
+    window.google.visualization=window.google.visualization||{};
+    window.google.visualization.Query=window.google.visualization.Query||{};
+    window.google.visualization.Query.setResponse=(payload)=>window[cbName](payload);
+    script=document.createElement("script");
+    script.src=url;
+    script.onerror=()=>{ cleanup(); reject(new Error("스크립트 로드 실패")); };
+    document.head.appendChild(script);
+  });
+}
 
-      cell.appendChild(eventsWrap);
+function findCol(headerNorm,candidates){
+  for(const c of candidates){ const i=headerNorm.findIndex(h=>h===c); if(i>=0) return i; }
+  for(const c of candidates){ const i=headerNorm.findIndex(h=>h.includes(c)); if(i>=0) return i; }
+  return -1;
+}
 
-      cell.addEventListener("click", () => {
-        if (!evs.length) return;
-        openCalendarDayModal(dKey, evs);
-      });
+// ============================================================
+// DB / META 파싱
+// ============================================================
+function toDBWithHeaderRecovery(cols,rows){
+  const songKeys=["곡명","노래","노래제목","제목","song","title","name"].map(norm);
+  const partKeys=["파트악기","파트","악기","instrument","part","세션"].map(norm);
+  const personKeys=["담당자","담당","연주자","멤버","이름","person","member"].map(norm);
+  const dateKeys=["등록일","날짜","일자","date","when","time","일시"].map(norm);
+  const scoreKeys=["악보url","악보","score","sheet","chord","악보링크"].map(norm);
+  const videoKeys=["영상url","영상","video","youtube","유튜브"].map(norm);
+  const poomKeys=["송품","메모","노트","note","memo","주의","주의사항","유의사항","warn","warning"].map(norm);
 
-      elCalCells.appendChild(cell);
+  let header=cols.map(h=>norm(h)), dataRows=rows;
+  let idxSong=findCol(header,songKeys), idxPart=findCol(header,partKeys), idxPerson=findCol(header,personKeys);
+  let idxDate=findCol(header,dateKeys), idxScore=findCol(header,scoreKeys);
+  let idxVideo=findCol(header,videoKeys), idxPoom=findCol(header,poomKeys);
+
+  const labelsBad=header.every(h=>!h||/^[a-z]$/.test(h));
+  if((idxSong<0||idxPart<0||idxPerson<0)&&dataRows.length&&labelsBad){
+    const firstRowHeader=dataRows[0].map(v=>norm(v));
+    const s2=findCol(firstRowHeader,songKeys), p2=findCol(firstRowHeader,partKeys), m2=findCol(firstRowHeader,personKeys);
+    if(s2>=0&&p2>=0&&m2>=0){
+      header=firstRowHeader; idxSong=s2; idxPart=p2; idxPerson=m2;
+      idxDate=findCol(firstRowHeader,dateKeys); idxScore=findCol(firstRowHeader,scoreKeys);
+      idxVideo=findCol(firstRowHeader,videoKeys); idxPoom=findCol(firstRowHeader,poomKeys);
+      dataRows=dataRows.slice(1);
     }
   }
-
-  function openCalendarEventModal(ev, dateKey){
-    elCalModalTitle.textContent = ev.title || "일정";
-    elCalModalMeta.textContent = dateKey ? ("날짜: " + dateKey) : "";
-    elCalModalBody.textContent = (ev.body || "").toString();
-
-    elCalModalActions.innerHTML = "";
-    const link = trim(ev.link);
-    if (link && /^https?:\/\//i.test(link)){
-      const a = document.createElement("a");
-      a.className = "miniBtn";
-      a.href = link;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.textContent = "링크";
-      elCalModalActions.appendChild(a);
-    }
-
-    const closeBtn = document.createElement("button");
-    closeBtn.className = "miniBtn";
-    closeBtn.type = "button";
-    closeBtn.textContent = "닫기";
-    closeBtn.addEventListener("click", closeCalendarModal);
-    elCalModalActions.appendChild(closeBtn);
-
-    elCalModalDim.classList.add("show");
-    elCalModalDim.setAttribute("aria-hidden","false");
+  if(idxSong<0||idxPart<0||idxPerson<0){
+    const seenCols=cols.filter(Boolean).slice(0,12).join(", ")||"(빈 헤더)";
+    const seenRow1=(rows[0]?rows[0].slice(0,12).join(", "):"(첫행 없음)");
+    throw new Error("컬럼 매칭 실패\n헤더: "+seenCols+"\n첫 행: "+seenRow1);
   }
+  const out=[];
+  for(const r of dataRows){
+    const song=trim(r[idxSong]??""), part=trim(r[idxPart]??""), person=trim(r[idxPerson]??"");
+    if(!song||!part||!person) continue;
+    const date=(idxDate>=0)?trim(r[idxDate]??""):"";
+    const scoreUrl=(idxScore>=0)?trim(r[idxScore]??""):"";
+    const videoUrl=(idxVideo>=0)?trim(r[idxVideo]??""):"";
+    const songPoom=(idxPoom>=0)?trim(r[idxPoom]??""):"";
+    out.push({ song,part,person,date,scoreUrl,videoUrl,songPoom,
+               songKey:norm(song), partKey:norm(part), personKey:norm(person) });
+  }
+  return out;
+}
 
-  function openCalendarDayModal(dateKey, evs){
-    elCalModalTitle.textContent = "일정";
-    elCalModalMeta.textContent = dateKey ? ("날짜: " + dateKey) : "";
-    elCalModalBody.textContent = "";
+function toMetaMapWithHeaderRecovery(cols,rows){
+  const songKeys=["곡명","노래","노래제목","제목","song","title","name"].map(norm);
+  const scoreKeys=["악보url","악보","score","sheet","chord","악보링크"].map(norm);
+  const noteKeys=["메모","노트","note","memo","콘티메모","콘티","송품"].map(norm);
+  const warnKeys=["주의사항","주의","warn","warning","주의점","유의사항"].map(norm);
+  const linkKeys=["링크","url","영상","youtube","참고","reference"].map(norm);
 
-    const lines = [];
-    evs.forEach((ev, idx) => {
-      const t = (ev.title || "일정").toString();
-      const b = (ev.body || "").toString();
-      if (b) lines.push(`${idx+1}. ${t}\n${b}`);
-      else lines.push(`${idx+1}. ${t}`);
+  const colLabels=cols.map(h=>norm(h));
+  let idxSong=findCol(colLabels,songKeys), idxScore=findCol(colLabels,scoreKeys);
+  let idxNote=findCol(colLabels,noteKeys), idxWarn=findCol(colLabels,warnKeys), idxLink=findCol(colLabels,linkKeys);
+  let startRow=0;
+
+  const labelsBad=colLabels.every(h=>!h||/^[a-z]$/.test(h));
+  if(idxSong<0&&rows&&rows.length&&labelsBad){
+    const first=rows[0].map(v=>norm(v));
+    const s2=findCol(first,songKeys);
+    if(s2>=0){
+      idxSong=s2; idxScore=findCol(first,scoreKeys); idxNote=findCol(first,noteKeys);
+      idxWarn=findCol(first,warnKeys); idxLink=findCol(first,linkKeys); startRow=1;
+    }
+  }
+  const m=new Map();
+  for(let i=startRow;i<rows.length;i++){
+    const r=rows[i]; const song=trim(r[idxSong]);
+    if(!song) continue;
+    const key=norm(song);
+    const scoreUrl=idxScore>=0?trim(r[idxScore]):"";
+    const linkUrl =idxLink >=0?trim(r[idxLink]) :"";
+    const note    =idxNote >=0?trim(r[idxNote]) :"";
+    const warn    =idxWarn >=0?trim(r[idxWarn]) :"";
+    const prev=m.get(key)||{song,scoreUrl:"",linkUrl:"",note:"",warn:""};
+    m.set(key,{ song:prev.song||song, scoreUrl:prev.scoreUrl||scoreUrl,
+                linkUrl:prev.linkUrl||linkUrl, note:prev.note||note, warn:prev.warn||warn });
+  }
+  return m;
+}
+
+// ============================================================
+// DOM 요소
+// ============================================================
+const elTopDot=document.getElementById("topDot"), elTopStatusText=document.getElementById("topStatusText");
+const elViewSearch=document.getElementById("viewSearch"), elViewSetlists=document.getElementById("viewSetlists");
+const elViewCalendar=document.getElementById("viewCalendar"), elViewNotice=document.getElementById("viewNotice");
+const elNavSearch=document.getElementById("navSearch"), elNavSetlists=document.getElementById("navSetlists");
+const elNavCalendar=document.getElementById("navCalendar"), elNavNotice=document.getElementById("navNotice");
+const elQ=document.getElementById("q"), elClear=document.getElementById("clear");
+const elSongs=document.getElementById("songs"), elSongCount=document.getElementById("songCount");
+const elSongListTitle=document.getElementById("songListTitle");
+const elResultsEmpty=document.getElementById("resultsEmpty"), elResultsTable=document.getElementById("resultsTable");
+const elResults=document.getElementById("results");
+const elMediaBox=document.getElementById("mediaBox"), elScoreRow=document.getElementById("scoreRow");
+const elVideoRow=document.getElementById("videoRow"), elScoreLinks=document.getElementById("scoreLinks");
+const elVideoLinks=document.getElementById("videoLinks");
+const elMetaBox=document.getElementById("metaBox"), elMetaSong=document.getElementById("metaSong");
+const elMetaScoreBtn=document.getElementById("metaScoreBtn"), elMetaLinkBtn=document.getElementById("metaLinkBtn");
+const elPoomDateTabs=document.getElementById("poomDateTabs"), elPoomByDate=document.getElementById("poomByDate");
+const elPoomCommon=document.getElementById("poomCommon");
+const elStatus=document.getElementById("status"), elStatusText=document.getElementById("statusText");
+const elAC=document.getElementById("ac"), elACBody=document.getElementById("acBody");
+const elACMeta=document.getElementById("acMeta");
+const elPersonPanel=document.getElementById("personPanel"), elPPName=document.getElementById("ppName");
+const elPPSongCount=document.getElementById("ppSongCount"), elPPRowCount=document.getElementById("ppRowCount");
+const elPPBody=document.getElementById("ppBody"), elPPClose=document.getElementById("ppClose");
+const elPPWeeksSel=document.getElementById("ppWeeksSel");
+const elSlTabs=document.getElementById("slTabs"), elSlDayTabs=document.getElementById("slDayTabs");
+const elSlTitle=document.getElementById("slTitle"), elSlCount=document.getElementById("slCount");
+const elSlBody=document.getElementById("slBody"), elSlScoreBtn=document.getElementById("slScoreBtn");
+const elSlCopyBtn=document.getElementById("slCopyBtn"), elSlCopyFmtBtn=document.getElementById("slCopyFmtBtn");
+const elSlReloadBtn=document.getElementById("slReloadBtn"), elSlBadge=document.getElementById("slBadge");
+const elModeRecent=document.getElementById("modeRecent"), elModeFrequent=document.getElementById("modeFrequent");
+const elModeOld=document.getElementById("modeOld"), elWeeksSel=document.getElementById("weeksSel");
+const elWeeksChip=document.getElementById("weeksChip"), elSortSel=document.getElementById("sortSel");
+const elFilterReset=document.getElementById("filterReset"), elFilterCount=document.getElementById("filterCount");
+const elNoDateChip=document.getElementById("noDateChip");
+const elNoticeBody=document.getElementById("noticeBody"), elNoticeCount=document.getElementById("noticeCount");
+const elNoticeChip=document.getElementById("noticeChip"), elNoticeReload=document.getElementById("noticeReload");
+const elNoticeSourceChip=document.getElementById("noticeSourceChip");
+const elNoticeModalDim=document.getElementById("noticeModalDim"), elNoticeModalClose=document.getElementById("noticeModalClose");
+const elNoticeModalTitle=document.getElementById("noticeModalTitle"), elNoticeModalMeta=document.getElementById("noticeModalMeta");
+const elNoticeModalBody=document.getElementById("noticeModalBody"), elNoticeModalActions=document.getElementById("noticeModalActions");
+const elCalCount=document.getElementById("calCount"), elCalPrev=document.getElementById("calPrev");
+const elCalNext=document.getElementById("calNext"), elCalToday=document.getElementById("calToday");
+const elCalReload=document.getElementById("calReload"), elCalMonthLabel=document.getElementById("calMonthLabel");
+const elCalCells=document.getElementById("calCells");
+const elCalModalDim=document.getElementById("calModalDim"), elCalModalClose=document.getElementById("calModalClose");
+const elCalModalTitle=document.getElementById("calModalTitle"), elCalModalMeta=document.getElementById("calModalMeta");
+const elCalModalBody=document.getElementById("calModalBody"), elCalModalActions=document.getElementById("calModalActions");
+const elCacheStatusBadge=document.getElementById("cacheStatusBadge");
+
+// ============================================================
+// 상태
+// ============================================================
+let DB=[], META=new Map(), SONGS=[];
+let SONG_INFO=new Map(), LAST_MEDIA={scores:new Set(),videos:new Set()};
+let _currentPersonName="";
+
+const POOM_STATE={ lastSongKey:"", selectedDate:"__all__", byDate:new Map(), dates:[] };
+const FILTER_DEFAULT={ mode:"recent", weeks:12, sort:"default" };
+let FILTER={ ...FILTER_DEFAULT };
+const FREQUENT_MIN_COUNT=2;
+
+let activeSetlistKey=SETLIST_TABS[0].key;
+let activeSetlistDayId="";
+let SETLIST_CACHE=new Map();
+let NOTICE_CACHE=[];
+let NOTICE_FROM_SHEET=true;
+let CAL_CACHE=[], CAL_BY_DATE=new Map();
+let CAL_MONTH=(()=>{ const p=nowKSTParts(); return {y:p.y,m:p.m-1}; })();
+
+const calMQ=window.matchMedia("(max-width: 520px)");
+function isCalMobile(){ return !!calMQ.matches; }
+
+// ============================================================
+// 오프라인 감지
+// ============================================================
+function updateOnlineStatus(){
+  document.body.classList.toggle("offline", !navigator.onLine);
+}
+window.addEventListener("online",  updateOnlineStatus);
+window.addEventListener("offline", updateOnlineStatus);
+updateOnlineStatus();
+
+// ============================================================
+// 상태 표시
+// ============================================================
+function setTopStatus(text,ok=true){
+  elTopStatusText.textContent=text;
+  elTopDot.style.background=ok?"rgba(142,240,208,.85)":"rgba(255,180,180,.85)";
+  elTopDot.style.boxShadow=ok?"0 0 0 4px rgba(142,240,208,.16)":"0 0 0 4px rgba(255,180,180,.16)";
+}
+function setStatus(msg,ok=true,loading=false){
+  elStatusText.textContent=msg;
+  elStatus.className="status "+(loading?"loading":"")+" "+(ok?"ok":"bad");
+  if(loading) setTopStatus("불러오는 중…",true);
+  else setTopStatus(ok?"연결됨":"오류",ok);
+}
+
+// ============================================================
+// ✅ URL 해시 기반 뷰 전환 (뒤로가기 지원)
+// ============================================================
+function setView(which){
+  const map={search:elViewSearch,setlists:elViewSetlists,calendar:elViewCalendar,notice:elViewNotice};
+  Object.values(map).forEach(v=>v.classList.remove("active"));
+  (map[which]||map.search).classList.add("active");
+
+  [elNavSearch,elNavSetlists,elNavCalendar,elNavNotice].forEach(b=>b.classList.remove("active"));
+  if(which==="search")   elNavSearch.classList.add("active");
+  if(which==="setlists") elNavSetlists.classList.add("active");
+  if(which==="calendar") elNavCalendar.classList.add("active");
+  if(which==="notice")   elNavNotice.classList.add("active");
+
+  closeAC();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+elNavSearch.addEventListener("click",  ()=>setView("search"));
+elNavSetlists.addEventListener("click",()=>setView("setlists"));
+elNavCalendar.addEventListener("click",()=>setView("calendar"));
+elNavNotice.addEventListener("click",  ()=>setView("notice"));
+
+// ============================================================
+// 필터/정렬
+// ============================================================
+function rebuildSongs(){
+  SONGS=uniqueBy(DB,r=>r.songKey).map(r=>r.song).sort((a,b)=>a.localeCompare(b,"ko"));
+}
+function buildSongInfo(){
+  SONG_INFO=new Map();
+  for(const r of DB){
+    const sk=r.songKey;
+    if(!SONG_INFO.has(sk)) SONG_INFO.set(sk,{song:r.song,lastTs:null,totalCount:0,tsSet:new Set(),tsList:[]});
+    const it=SONG_INFO.get(sk);
+    it.song=it.song||r.song;
+    it.totalCount+=1;
+    const ts=toDateTs(r.date);
+    if(ts){ it.tsSet.add(ts); if(!it.lastTs||ts>it.lastTs) it.lastTs=ts; }
+  }
+  for(const it of SONG_INFO.values()){ it.tsList=Array.from(it.tsSet).sort((a,b)=>a-b); delete it.tsSet; }
+}
+function cutoffTsByWeeks(weeks){ return nowKSTTs()-weeks*7*24*60*60*1000; }
+function countInWindow(tsList,cutoffTs){
+  let lo=0,hi=tsList.length;
+  while(lo<hi){ const mid=(lo+hi)>>1; if(tsList[mid]<cutoffTs) lo=mid+1; else hi=mid; }
+  return tsList.length-lo;
+}
+function getFilteredSongKeys(){
+  const cutoff=cutoffTsByWeeks(FILTER.weeks);
+  let keys=[], noDateCount=0;
+  for(const [sk,info] of SONG_INFO.entries()){
+    const hasDate=!!info.lastTs;
+    if(!hasDate){ noDateCount+=1; keys.push(sk); continue; }
+    if(FILTER.mode==="recent"){ if(countInWindow(info.tsList,cutoff)>=1) keys.push(sk); }
+    else if(FILTER.mode==="frequent"){ if(countInWindow(info.tsList,cutoff)>=FREQUENT_MIN_COUNT) keys.push(sk); }
+    else if(FILTER.mode==="old"){ if(info.lastTs<cutoff) keys.push(sk); }
+  }
+  elNoDateChip.textContent="날짜없음 "+noDateCount;
+  elNoDateChip.style.display=noDateCount?"inline-block":"none";
+  return keys;
+}
+function getFilteredSongs(){
+  const keys=getFilteredSongKeys();
+  const list=keys.map(sk=>{ const info=SONG_INFO.get(sk); return {songKey:sk,song:info?.song||"",info}; });
+  const cutoff=cutoffTsByWeeks(FILTER.weeks);
+  if(FILTER.sort==="az") list.sort((a,b)=>a.song.localeCompare(b.song,"ko"));
+  else {
+    if(FILTER.mode==="recent") list.sort((a,b)=>(b.info.lastTs||0)-(a.info.lastTs||0));
+    else if(FILTER.mode==="frequent") list.sort((a,b)=>{
+      const ca=countInWindow(a.info.tsList,cutoff), cb=countInWindow(b.info.tsList,cutoff);
+      return cb!==ca?cb-ca:(b.info.lastTs||0)-(a.info.lastTs||0);
     });
-    elCalModalBody.textContent = lines.join("\n\n");
+    else if(FILTER.mode==="old") list.sort((a,b)=>{
+      const ta=a.info.lastTs===null?Infinity:a.info.lastTs;
+      const tb=b.info.lastTs===null?Infinity:b.info.lastTs;
+      return ta-tb;
+    });
+  }
+  return list;
+}
 
-    elCalModalActions.innerHTML = "";
+// ============================================================
+// 미디어
+// ============================================================
+function hideMediaBox(){
+  elMediaBox.style.display="none"; elScoreRow.style.display="none"; elVideoRow.style.display="none";
+  elScoreLinks.innerHTML=""; elVideoLinks.innerHTML="";
+  LAST_MEDIA={scores:new Set(),videos:new Set()};
+}
+function makeLinkChip(href,label){
+  const a=document.createElement("a");
+  a.className="chip chipLink"; a.href=href; a.target="_blank"; a.rel="noopener"; a.textContent=label;
+  return a;
+}
+function renderMediaForExactSong(exactRows){
+  if(!exactRows||!exactRows.length){ hideMediaBox(); return; }
+  const qn=norm(elQ.value), meta=META.get(qn);
+  const scoreMap=new Map(), videoMap=new Map();
+  const addScore=(l,u)=>{ const k=l+"||"+u; if(!scoreMap.has(k)) scoreMap.set(k,{label:l,url:u}); };
+  const addVideo=(l,u)=>{ const k=l+"||"+u; if(!videoMap.has(k)) videoMap.set(k,{label:l,url:u}); };
+  exactRows.forEach(r=>{
+    parseLabeledLinks(r.scoreUrl,"악보").forEach(({label,url})=>addScore(label,url));
+    parseLabeledLinks(r.videoUrl,"영상").forEach(({label,url})=>addVideo(label,url));
+  });
+  if(meta){
+    parseLabeledLinks(meta.scoreUrl,"악보").forEach(({label,url})=>addScore(label,url));
+    parseLabeledLinks(meta.linkUrl,"영상").forEach(({label,url})=>addVideo(label,url));
+  }
+  const scores=[...scoreMap.values()], videos=[...videoMap.values()];
+  LAST_MEDIA={scores:new Set(scores.map(x=>x.url)),videos:new Set(videos.map(x=>x.url))};
+  if(!scores.length&&!videos.length){ hideMediaBox(); return; }
+  elMediaBox.style.display="block";
+  if(scores.length){ elScoreRow.style.display="flex"; elScoreLinks.innerHTML=""; scores.slice(0,10).forEach(({url,label})=>elScoreLinks.appendChild(makeLinkChip(url,label))); }
+  else elScoreRow.style.display="none";
+  if(videos.length){ elVideoRow.style.display="flex"; elVideoLinks.innerHTML=""; videos.slice(0,10).forEach(({url,label})=>elVideoLinks.appendChild(makeLinkChip(url,label))); }
+  else elVideoRow.style.display="none";
+}
 
-    const firstLink = evs.map(e => trim(e.link)).find(u => u && /^https?:\/\//i.test(u)) || "";
-    if (firstLink){
-      const a = document.createElement("a");
-      a.className = "miniBtn";
-      a.href = firstLink;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.textContent = "링크";
-      elCalModalActions.appendChild(a);
+// ============================================================
+// 송품
+// ============================================================
+function resetPoomState(){ POOM_STATE.lastSongKey=""; POOM_STATE.selectedDate="__all__"; POOM_STATE.byDate=new Map(); POOM_STATE.dates=[]; }
+function hideMetaBox(){
+  elMetaBox.style.display="none"; elMetaSong.textContent="";
+  elMetaScoreBtn.style.display="none"; elMetaLinkBtn.style.display="none";
+  elPoomDateTabs.innerHTML=""; elPoomByDate.innerHTML=""; elPoomCommon.textContent="";
+  resetPoomState();
+}
+function formatPoomTextToHTML(text){
+  const lines=(text??"").toString().split(/\r?\n/);
+  return lines.map(line=>{
+    const t=line.trim(); if(!t) return "";
+    let m=t.match(/^(싱어|보컬|vocal)\s*[:：]\s*(.*)$/i);
+    if(m) return `<div class="poomLine"><span class="poomTag singer">${escapeHTML(m[1])}</span><span class="poomText">${escapeHTML(m[2]??"")}</span></div>`;
+    m=t.match(/^(악기|연주|band|inst|instrument)\s*[:：]\s*(.*)$/i);
+    if(m) return `<div class="poomLine"><span class="poomTag inst">${escapeHTML(m[1])}</span><span class="poomText">${escapeHTML(m[2]??"")}</span></div>`;
+    return `<div class="poomLine"><span class="poomText">${escapeHTML(t)}</span></div>`;
+  }).join("");
+}
+function poomSortDates(dates){ return dates.slice().sort((a,b)=>{ if(a==="날짜 없음") return 1; if(b==="날짜 없음") return -1; return b.localeCompare(a); }); }
+function renderPoomTabs(){
+  elPoomDateTabs.innerHTML="";
+  const makeBtn=(label,value)=>{
+    const b=document.createElement("button"); b.type="button"; b.className="chip chipBtn";
+    b.textContent=label; b.classList.toggle("active",POOM_STATE.selectedDate===value);
+    b.addEventListener("click",()=>{ POOM_STATE.selectedDate=value; renderPoomTabs(); renderPoomBody(); });
+    return b;
+  };
+  elPoomDateTabs.appendChild(makeBtn("전체","__all__"));
+  POOM_STATE.dates.forEach(d=>elPoomDateTabs.appendChild(makeBtn(d,d)));
+}
+function renderPoomBody(){
+  elPoomByDate.innerHTML="";
+  const sel=POOM_STATE.selectedDate, dates=POOM_STATE.dates;
+  const renderOneDate=(d)=>{
+    const set=POOM_STATE.byDate.get(d); const notes=Array.from(set||[]);
+    if(!notes.length) return;
+    const dateRow=document.createElement("div"); dateRow.className="poomDateRow";
+    dateRow.innerHTML=`<span class="chip dateChip">${escapeHTML(d)}</span>`;
+    elPoomByDate.appendChild(dateRow);
+    const linesWrap=document.createElement("div"); linesWrap.className="poomLines";
+    linesWrap.innerHTML=notes.map(n=>formatPoomTextToHTML(n)).join("");
+    elPoomByDate.appendChild(linesWrap);
+  };
+  if(sel!=="__all__"){ renderOneDate(sel); if(!elPoomByDate.innerHTML) elPoomByDate.innerHTML=`<div class="empty">내용 없음</div>`; return; }
+  if(!dates.length){ elPoomByDate.innerHTML=`<div class="empty">내용 없음</div>`; return; }
+  dates.forEach(renderOneDate);
+}
+function renderPoomForExactSong(exactRows){
+  const qn=norm(elQ.value);
+  if(!qn||!exactRows||!exactRows.length){ hideMetaBox(); return; }
+  if(POOM_STATE.lastSongKey!==qn){ POOM_STATE.lastSongKey=qn; POOM_STATE.selectedDate="__all__"; }
+  const byDate=new Map();
+  for(const r of exactRows){
+    const poom=trim(r.songPoom); if(!poom) continue;
+    const d=normDateStr(r.date)||"날짜 없음";
+    if(!byDate.has(d)) byDate.set(d,new Set());
+    byDate.get(d).add(poom);
+  }
+  const dates=poomSortDates(Array.from(byDate.keys()));
+  const meta=META.get(qn);
+  const commonBlocks=[];
+  if(meta){ if(trim(meta.note)) commonBlocks.push(trim(meta.note)); if(trim(meta.warn)) commonBlocks.push(trim(meta.warn)); }
+  const hasAny=byDate.size>0||commonBlocks.length>0||(meta&&(trim(meta.scoreUrl)||trim(meta.linkUrl)));
+  if(!hasAny){ hideMetaBox(); return; }
+  POOM_STATE.byDate=byDate; POOM_STATE.dates=dates;
+  if(POOM_STATE.selectedDate!=="__all__"&&!byDate.has(POOM_STATE.selectedDate)) POOM_STATE.selectedDate="__all__";
+  elMetaBox.style.display="block"; elMetaSong.textContent=meta?.song||elQ.value;
+  if(meta){
+    const sOne=extractFirstUrl(trim(meta.scoreUrl)), lOne=extractFirstUrl(trim(meta.linkUrl));
+    if(sOne&&!LAST_MEDIA.scores.has(sOne)){ elMetaScoreBtn.href=sOne; elMetaScoreBtn.style.display="inline-flex"; } else elMetaScoreBtn.style.display="none";
+    if(lOne&&!LAST_MEDIA.videos.has(lOne)){ elMetaLinkBtn.href=lOne; elMetaLinkBtn.style.display="inline-flex"; } else elMetaLinkBtn.style.display="none";
+  } else { elMetaScoreBtn.style.display="none"; elMetaLinkBtn.style.display="none"; }
+  renderPoomTabs(); renderPoomBody();
+  if(commonBlocks.length){ elPoomCommon.textContent=commonBlocks.join("\n\n"); elPoomCommon.style.display="block"; }
+  else { elPoomCommon.textContent=""; elPoomCommon.style.display="none"; }
+}
+
+// ============================================================
+// ✅ 검색 결과 — renderSearchView 로 분리
+// ============================================================
+function renderResults(){
+  const qn=norm(elQ.value);
+  if(!qn){ elResultsTable.style.display="none"; elResultsEmpty.style.display="block"; elResultsEmpty.textContent="검색어를 입력해 주세요."; elResults.innerHTML=""; hideMediaBox(); hideMetaBox(); return; }
+  const matches=DB.filter(r=>r.songKey.includes(qn));
+  const exact=matches.filter(r=>r.songKey===qn);
+  const picked=exact.length?exact:matches;
+  if(exact.length){ renderMediaForExactSong(exact); renderPoomForExactSong(exact); }
+  else { hideMediaBox(); hideMetaBox(); }
+  const group=new Map();
+  for(const r of picked){
+    const k=`${r.partKey}||${r.personKey}`;
+    if(!group.has(k)) group.set(k,{part:r.part,person:r.person,dates:new Set()});
+    const nd=normDateStr(r.date); if(nd) group.get(k).dates.add(nd);
+  }
+  const rows=[...group.values()].sort((a,b)=>a.part.localeCompare(b.part,"ko"));
+  elResults.innerHTML="";
+  if(!rows.length){ elResultsTable.style.display="none"; elResultsEmpty.style.display="block"; elResultsEmpty.textContent="결과 없음"; return; }
+  elResultsEmpty.style.display="none"; elResultsTable.style.display="table";
+  rows.forEach(r=>{
+    const tr=document.createElement("tr");
+    const td1=document.createElement("td"); td1.textContent=r.part;
+    const td2=document.createElement("td");
+    const name=document.createElement("span"); name.className="personLink"; name.textContent=r.person;
+    name.addEventListener("click",()=>openPersonPanel(r.person));
+    td2.appendChild(name);
+    const dates=[...r.dates]; if(dates.length){ dates.sort((a,b)=>b.localeCompare(a)); const wrap=document.createElement("div"); wrap.className="dateChips"; dates.forEach(d=>{ const chip=document.createElement("span"); chip.className="chip dateChip"; chip.textContent=d; wrap.appendChild(chip); }); td2.appendChild(wrap); }
+    tr.appendChild(td1); tr.appendChild(td2); elResults.appendChild(tr);
+  });
+}
+
+function renderSongList(){
+  const filtered=getFilteredSongs();
+  const qn=norm(elQ.value);
+  const view=qn?filtered.filter(x=>norm(x.song).includes(qn)):filtered;
+  elWeeksChip.textContent=FILTER.weeks+"주";
+  elSongListTitle.textContent="곡 목록 · "+activeModeLabel()+" ("+FILTER.weeks+"주)";
+  elFilterCount.textContent=filtered.length+"곡";
+  elSongCount.textContent=view.length.toString();
+  elSongs.innerHTML=view.length?"":`<div class="empty">목록 없음</div>`;
+  const cutoff=cutoffTsByWeeks(FILTER.weeks);
+  view.slice(0,600).forEach(x=>{
+    const div=document.createElement("div"); div.className="item";
+    let rightChip="클릭", rightChipClass="chip";
+    if(!x.info||x.info.lastTs===null){ rightChip="날짜 없음"; rightChipClass="chip warn"; }
+    else if(FILTER.mode==="recent"){ rightChip="마지막 "+fmtYmdKST(x.info.lastTs); rightChipClass="chip ok"; }
+    else if(FILTER.mode==="frequent"){ rightChip=FILTER.weeks+"주 "+countInWindow(x.info.tsList,cutoff)+"회"; rightChipClass="chip ok"; }
+    else if(FILTER.mode==="old"){ rightChip="마지막 "+fmtYmdKST(x.info.lastTs); rightChipClass="chip warn"; }
+    div.innerHTML=`<span>${highlight(x.song,qn)}</span><span class="${rightChipClass}">${escapeHTML(rightChip)}</span>`;
+    div.addEventListener("click",()=>{ elQ.value=x.song; closeAC(); renderSearchView(); elQ.focus(); });
+    elSongs.appendChild(div);
+  });
+  if(view.length>600){ const more=document.createElement("div"); more.className="empty"; more.textContent="목록이 많아 일부만 표시됩니다."; elSongs.appendChild(more); }
+}
+
+// ✅ 검색 뷰만 업데이트하는 함수 (캘린더/공지/콘티 재렌더 불필요)
+function renderSearchView(){
+  renderSongList();
+  renderResults();
+  renderAC();
+  setActiveModeButtons();
+}
+
+// ============================================================
+// 자동완성 — ✅ 모바일 키보드 위 고정
+// ============================================================
+let acItems=[], acIndex=-1;
+function openAC(){
+  if(!acItems.length) return closeAC();
+  // ✅ 모바일: fixed 포지셔닝으로 키보드에 안 가려지게
+  const rect=elQ.getBoundingClientRect();
+  const isMobile=window.innerWidth<900;
+  if(isMobile){
+    elAC.style.position="fixed";
+    elAC.style.top=(rect.bottom+8)+"px";
+    elAC.style.left=rect.left+"px";
+    elAC.style.right=(window.innerWidth-rect.right)+"px";
+    elAC.style.width="auto";
+  } else {
+    elAC.style.position="absolute";
+    elAC.style.top=""; elAC.style.left=""; elAC.style.right=""; elAC.style.width="";
+  }
+  elAC.style.display="block";
+  elAC.setAttribute("aria-hidden","false");
+}
+function closeAC(){ elAC.style.display="none"; elAC.setAttribute("aria-hidden","true"); acIndex=-1; }
+function scrollACIntoView(){ const rows=elACBody.querySelectorAll(".acRow"); const row=rows[acIndex]; if(!row) return; const top=row.offsetTop, bottom=top+row.offsetHeight; if(top<elACBody.scrollTop) elACBody.scrollTop=top; else if(bottom>elACBody.scrollTop+elACBody.clientHeight) elACBody.scrollTop=bottom-elACBody.clientHeight; }
+function chooseAC(i){ const item=acItems[i]; if(!item) return; elQ.value=item; closeAC(); renderSearchView(); elQ.focus(); }
+function renderAC(){
+  const qn=norm(elQ.value);
+  if(!qn){ closeAC(); elACBody.innerHTML=""; elACMeta.textContent="0"; return; }
+  acItems=SONGS.filter(s=>norm(s).includes(qn)).slice(0,10);
+  elACMeta.textContent=String(acItems.length);
+  if(!acItems.length) return closeAC();
+  openAC();
+  elACBody.innerHTML="";
+  acItems.forEach((song,idx)=>{
+    const row=document.createElement("div");
+    row.className="acRow"+(idx===acIndex?" active":"");
+    row.innerHTML=`<span>${highlight(song,qn)}</span><span class="chip">Enter</span>`;
+    row.addEventListener("mousedown",(e)=>{ e.preventDefault(); chooseAC(idx); });
+    elACBody.appendChild(row);
+  });
+}
+function stepAC(dir){
+  if(elAC.style.display!=="block") return;
+  if(!acItems.length) return;
+  acIndex=acIndex+dir;
+  if(acIndex<0) acIndex=acItems.length-1;
+  if(acIndex>=acItems.length) acIndex=0;
+  elACBody.querySelectorAll(".acRow").forEach((r,i)=>r.classList.toggle("active",i===acIndex));
+  scrollACIntoView();
+}
+
+// ============================================================
+// ✅ 담당자 패널 — 기간 필터 포함
+// ============================================================
+function openPersonPanel(personName){
+  _currentPersonName=personName;
+  renderPersonPanel();
+  elPersonPanel.style.display="block";
+}
+function renderPersonPanel(){
+  const personName=_currentPersonName;
+  const pk=norm(personName);
+  if(!pk) return;
+  const weeksVal=parseInt(elPPWeeksSel.value,10)||0;
+  const cutoff=weeksVal>0?cutoffTsByWeeks(weeksVal):null;
+
+  const rows=DB.filter(r=>{
+    if(r.personKey!==pk) return false;
+    if(!cutoff) return true;
+    const ts=toDateTs(r.date);
+    if(!ts) return true; // 날짜 없는 건 항상 포함
+    return ts>=cutoff;
+  });
+
+  const songMap=new Map();
+  for(const r of rows){
+    const sk=r.songKey;
+    if(!songMap.has(sk)) songMap.set(sk,{song:r.song,parts:new Set()});
+    songMap.get(sk).parts.add(r.part);
+  }
+  const songs=[...songMap.values()].sort((a,b)=>a.song.localeCompare(b.song,"ko"));
+
+  elPPName.textContent=personName;
+  elPPSongCount.textContent=songs.length+"곡";
+  elPPRowCount.textContent=rows.length+"행";
+
+  elPPBody.innerHTML="";
+  if(!songs.length){ elPPBody.innerHTML=`<div class="empty">기록 없음</div>`; return; }
+  songs.forEach(s=>{
+    const div=document.createElement("div"); div.className="item";
+    const parts=[...s.parts].join(", ");
+    div.innerHTML=`<span>${escapeHTML(s.song)}</span><span class="chip">${escapeHTML(parts||"보기")}</span>`;
+    div.addEventListener("click",()=>{ elQ.value=s.song; closeAC(); renderSearchView(); setView("search"); window.scrollTo({top:0,behavior:"smooth"}); });
+    elPPBody.appendChild(div);
+  });
+}
+elPPWeeksSel.addEventListener("change", renderPersonPanel);
+function closePersonPanel(){ elPersonPanel.style.display="none"; elPPBody.innerHTML=""; _currentPersonName=""; }
+
+// ============================================================
+// 콘티
+// ============================================================
+function uniqSongs(arr){
+  const seen=new Set(), out=[];
+  for(const s of arr){ const t=trim(s); if(!t) continue; const k=norm(t); if(seen.has(k)) continue; seen.add(k); out.push(t); }
+  return out;
+}
+function isHeaderRowForDays(row){ return row.map(v=>norm(v)).some(h=>/^(\d+)일차$/.test(h)); }
+function buildMultiDaySetlist(rows){
+  if(!rows||rows.length<2) return null;
+  const header=rows[0].map(v=>trim(v??""));
+  const headerN=header.map(v=>norm(v));
+  if(!isHeaderRowForDays(header)) return null;
+  function idxOfExact(label){ const nl=norm(label); let idx=headerN.findIndex(h=>h===nl); if(idx>=0) return idx; idx=headerN.findIndex(h=>h.includes(nl)); return idx; }
+  const days=[];
+  for(let n=1;n<=6;n++){
+    const dayTitle=`${n}일차`, songCol=idxOfExact(dayTitle);
+    if(songCol<0) continue;
+    let scoreCol=idxOfExact(`${n}일차악보`);
+    if(scoreCol<0) scoreCol=idxOfExact(`${n}일차 악보`);
+    if(scoreCol<0) scoreCol=idxOfExact(`${n}일차링크`);
+    if(scoreCol<0) scoreCol=idxOfExact(`${n}일차 링크`);
+    if(scoreCol<0) scoreCol=idxOfExact(`${n}일차url`);
+    if(scoreCol<0 && headerN[songCol+1] && (headerN[songCol+1].includes("악보")||headerN[songCol+1].includes("링크")||headerN[songCol+1].includes("url"))) scoreCol=songCol+1;
+    const songsRaw=[]; let url="";
+    for(let i=1;i<rows.length;i++){
+      const r=rows[i]||[];
+      const s=trim(r[songCol]??"");
+      if(s&&norm(s)!==norm("곡명")) songsRaw.push(s);
+      if(!url&&scoreCol>=0){ const u=extractFirstUrl(r[scoreCol]??""); if(u) url=u; }
     }
-
-    const closeBtn = document.createElement("button");
-    closeBtn.className = "miniBtn";
-    closeBtn.type = "button";
-    closeBtn.textContent = "닫기";
-    closeBtn.addEventListener("click", closeCalendarModal);
-    elCalModalActions.appendChild(closeBtn);
-
-    elCalModalDim.classList.add("show");
-    elCalModalDim.setAttribute("aria-hidden","false");
+    const songs=uniqSongs(songsRaw);
+    if(songs.length||url) days.push({id:`day${n}`,title:dayTitle,songs,url});
   }
+  if(!days.length) return null;
+  return {type:"multi",days};
+}
 
-  function closeCalendarModal(){
-    elCalModalDim.classList.remove("show");
-    elCalModalDim.setAttribute("aria-hidden","true");
-  }
+async function loadSetlistFromSheet(sheetName){
+  const sheetId=extractSheetId(FIXED_SHEET_URL);
+  const base="https://docs.google.com/spreadsheets/d/"+sheetId+"/gviz/tq?tqx=out:json";
 
-  elCalModalClose.addEventListener("click", closeCalendarModal);
-  elCalModalDim.addEventListener("click", (e) => {
-    if (e.target === elCalModalDim) closeCalendarModal();
-  });
+  // 멀티일차 감지 — 실패 시 조용히 싱글로 폴백
+  try{
+    const urlWide=base+"&sheet="+encodeURIComponent(sheetName)+"&tq="+encodeURIComponent("select A,B,C,D,E,F where A is not null or B is not null or C is not null or D is not null or E is not null or F is not null");
+    const pWide=await loadGvizJSONP(urlWide);
+    const multi=buildMultiDaySetlist(pWide.rows||[]);
+    if(multi) return multi;
+  }catch(e){ /* 싱글 시트는 F열 없어서 정상 오류 */ }
 
-  elCalPrev.addEventListener("click", () => {
-    let y = CAL_MONTH.y, m = CAL_MONTH.m;
-    m -= 1;
-    if (m < 0){ m = 11; y -= 1; }
-    CAL_MONTH = { y, m };
-    renderCalendar();
-  });
+  const url=base+"&sheet="+encodeURIComponent(sheetName)+"&headers=1&tq="+encodeURIComponent("select A,B where A is not null or B is not null");
+  const p=await loadGvizJSONP(url);
+  const songsRaw=(p.rows||[]).map(r=>trim(r[0]??"")).filter(Boolean);
+  const cleanedSongs=uniqSongs(songsRaw);
+  let setlistUrl="";
+  for(const r of (p.rows||[])){ const u=extractFirstUrl(r[1]??""); if(u){ setlistUrl=u; break; } }
+  return {type:"single",songs:cleanedSongs,url:setlistUrl};
+}
 
-  elCalNext.addEventListener("click", () => {
-    let y = CAL_MONTH.y, m = CAL_MONTH.m;
-    m += 1;
-    if (m > 11){ m = 0; y += 1; }
-    CAL_MONTH = { y, m };
-    renderCalendar();
-  });
-
-  elCalToday.addEventListener("click", () => {
-    const p = nowKSTParts();
-    CAL_MONTH = { y: p.y, m: p.m - 1 };
-    renderCalendar();
-  });
-
-  elCalReload.addEventListener("click", async () => {
-    setStatus("불러오는 중…", true, true);
+async function loadAllSetlists(){
+  for(const def of SETLIST_TABS){
+    const cached=loadCache("sl_"+def.key);
+    if(cached){ SETLIST_CACHE.set(def.key,cached); continue; }
     try{
-      CAL_CACHE = await loadCalendarFromSheet();
-      buildCalendarIndex();
-      renderCalendar();
-      setStatus("완료", true, false);
-    } catch(e){
-      CAL_CACHE = [];
-      buildCalendarIndex();
-      renderCalendar();
-      setStatus("캘린더 불러오기 실패\n" + e.message, false, false);
-    }
+      const data=await loadSetlistFromSheet(def.sheet);
+      SETLIST_CACHE.set(def.key,data);
+      saveCache("sl_"+def.key,data);
+    }catch(e){ SETLIST_CACHE.set(def.key,{type:"single",songs:[],url:""}); }
+  }
+}
+
+function slRenderTabs(){
+  elSlTabs.innerHTML="";
+  SETLIST_TABS.forEach(def=>{
+    const b=document.createElement("button"); b.type="button"; b.className="miniBtn"; b.textContent=def.title; b.style.borderRadius="999px";
+    if(def.key===activeSetlistKey) b.classList.add("active");
+    b.addEventListener("click",()=>{ activeSetlistKey=def.key; activeSetlistDayId=""; slRenderTabs(); slRenderList(); });
+    elSlTabs.appendChild(b);
   });
+}
+function getActiveSetlistDef(){ return SETLIST_TABS.find(d=>d.key===activeSetlistKey); }
+function getActiveSetlistData(){ return SETLIST_CACHE.get(activeSetlistKey)||{type:"single",songs:[],url:""}; }
+function getActiveDay(data){
+  if(!data||data.type!=="multi") return null;
+  const days=data.days||[];
+  if(!days.length) return null;
+  if(!activeSetlistDayId||!days.some(d=>d.id===activeSetlistDayId)) activeSetlistDayId=days[0].id;
+  return days.find(d=>d.id===activeSetlistDayId)||days[0];
+}
+function slRenderDayTabs(data){
+  if(!data||data.type!=="multi"||!(data.days||[]).length){ elSlDayTabs.style.display="none"; elSlDayTabs.innerHTML=""; return; }
+  elSlDayTabs.style.display="flex"; elSlDayTabs.innerHTML="";
+  const days=data.days||[], active=getActiveDay(data);
+  days.forEach(d=>{
+    const b=document.createElement("button"); b.type="button"; b.className="miniBtn"; b.textContent=d.title; b.style.borderRadius="999px";
+    if(active&&d.id===active.id) b.classList.add("active");
+    b.addEventListener("click",()=>{ activeSetlistDayId=d.id; slRenderDayTabs(data); slRenderList(); });
+    elSlDayTabs.appendChild(b);
+  });
+}
+function slRenderList(){
+  const def=getActiveSetlistDef(), data=getActiveSetlistData();
+  let title=def?def.title:activeSetlistKey, arr=[], url="";
+  if(data.type==="multi"){ slRenderDayTabs(data); const day=getActiveDay(data); if(day){ title=title+" · "+(day.title||""); arr=day.songs||[]; url=day.url||""; } }
+  else { slRenderDayTabs(null); arr=data.songs||[]; url=data.url||""; }
+  elSlTitle.textContent=title; elSlCount.textContent=String(arr.length); elSlBadge.textContent=def?def.title:"-";
+  if(url){ elSlScoreBtn.href=url; elSlScoreBtn.style.display="inline-flex"; } else { elSlScoreBtn.style.display="none"; elSlScoreBtn.removeAttribute("href"); }
+  elSlBody.innerHTML="";
+  if(!arr.length){ elSlBody.innerHTML=`<div class="empty">목록 없음</div>`; return; }
+  arr.forEach((song,idx)=>{
+    const row=document.createElement("div"); row.className="item";
+    row.innerHTML=`<span><b style="margin-right:8px;">${idx+1}.</b>${escapeHTML(song)}</span><span class="chip">검색</span>`;
+    row.addEventListener("click",()=>{ elQ.value=song; closeAC(); renderSearchView(); setView("search"); });
+    elSlBody.appendChild(row);
+  });
+}
+
+function getSlCopyData(){
+  const def=getActiveSetlistDef(), data=getActiveSetlistData();
+  let title=def?def.title:activeSetlistKey, arr=[], url="";
+  if(data.type==="multi"){ const day=getActiveDay(data); if(day){ title=title+" · "+(day.title||""); arr=day.songs||[]; url=day.url||""; } }
+  else { arr=data.songs||[]; url=data.url||""; }
+  return {title,arr,url};
+}
+
+elSlCopyBtn.addEventListener("click",async()=>{
+  const {title,arr,url}=getSlCopyData();
+  const urlLine=url?"악보: "+url+"\n":"";
+  const text=[title,urlLine,...arr.map((s,i)=>`${i+1}. ${s}`)].filter(Boolean).join("\n");
+  try{ await navigator.clipboard.writeText(text); setStatus("복사 완료",true,false); }
+  catch(e){ prompt("복사(Ctrl+C)",text); }
+});
+
+// ✅ 카톡용 이쁜 포맷 복사
+elSlCopyFmtBtn.addEventListener("click",async()=>{
+  const {title,arr,url}=getSlCopyData();
+  const sep="─".repeat(18);
+  const lines=[
+    `📋 ${title}`,
+    sep,
+    ...arr.map((s,i)=>`${i+1}. ${s}`),
+    sep,
+  ];
+  if(url) lines.push(`🎵 악보: ${url}`);
+  const text=lines.join("\n");
+  try{ await navigator.clipboard.writeText(text); setStatus("카톡용 복사 완료",true,false); }
+  catch(e){ prompt("복사(Ctrl+C)",text); }
+});
+
+elSlReloadBtn.addEventListener("click",async()=>{
+  SETLIST_TABS.forEach(def=>{ try{ localStorage.removeItem(CACHE_PREFIX+"sl_"+def.key); }catch(e){} });
+  setStatus("불러오는 중…",true,true);
+  await loadAllSetlists();
+  slRenderTabs(); slRenderList();
+  setStatus("완료",true,false);
+});
+
+// ============================================================
+// 공지
+// ============================================================
+function isHeaderLikeNotice(n){
+  const set=new Set([norm(n.title),norm(n.body),norm(n.link),norm(n.date)].filter(Boolean));
+  return (set.has(norm("제목"))&&(set.has(norm("내용"))||set.has(norm("링크"))||set.has(norm("날짜"))))||(set.has(norm("날짜"))&&set.has(norm("제목")));
+}
+async function loadNoticesFromSheet(){
+  const cached=loadCache("notices");
+  if(cached) return cached;
+
+  const sheetId=extractSheetId(FIXED_SHEET_URL);
+  const base="https://docs.google.com/spreadsheets/d/"+sheetId+"/gviz/tq?tqx=out:json";
+  const url=base+"&sheet="+encodeURIComponent(NOTICE_SHEET_NAME)+"&tq="+encodeURIComponent("select A,B,C,D where A is not null or B is not null or C is not null or D is not null");
+  const p=await loadGvizJSONP(url);
+  const cols=p.cols||[], rows=p.rows||[];
+
+  const titleKeys=["제목","title","subject"].map(norm);
+  const bodyKeys=["내용","body","text","message","공지내용"].map(norm);
+  const linkKeys=["링크","url","link"].map(norm);
+  const dateKeys=["날짜","일자","date","day"].map(norm);
+
+  let header=cols.map(h=>norm(h));
+  let idxTitle=findCol(header,titleKeys), idxBody=findCol(header,bodyKeys);
+  let idxLink=findCol(header,linkKeys), idxDate=findCol(header,dateKeys);
+  let startRow=0;
+
+  const labelsBad=header.every(h=>!h||/^[a-z]$/.test(h));
+  if((idxTitle<0||idxBody<0)&&rows.length&&labelsBad){
+    const first=rows[0].map(v=>norm(v));
+    const t2=findCol(first,titleKeys), b2=findCol(first,bodyKeys);
+    if(t2>=0&&b2>=0){ idxTitle=t2; idxBody=b2; idxLink=findCol(first,linkKeys); idxDate=findCol(first,dateKeys); startRow=1; }
+  }
+  if(idxTitle<0) idxTitle=0; if(idxBody<0) idxBody=1; if(idxLink<0) idxLink=2; if(idxDate<0) idxDate=3;
+
+  let list=[];
+  for(let i=startRow;i<rows.length;i++){
+    const r=rows[i]||[];
+    const rawTitle=trim(r[idxTitle]??""), rawBody=trim(r[idxBody]??"");
+    const rawLink=trim(r[idxLink]??""), rawDate=trim(r[idxDate]??"");
+    if(!rawTitle&&!rawBody&&!rawLink&&!rawDate) continue;
+    list.push({title:rawTitle,body:rawBody,link:rawLink,date:normDateStr(rawDate)});
+  }
+  list=list.filter(n=>!isHeaderLikeNotice(n));
+  list.sort((a,b)=>{ const ad=normDateStr(a.date),bd=normDateStr(b.date); if(ad&&bd) return bd.localeCompare(ad); if(ad&&!bd) return -1; if(!ad&&bd) return 1; return 0; });
+
+  saveCache("notices",list);
+  return list;
+}
+
+function openNoticeModal(n){
+  elNoticeModalTitle.textContent=n.title||"공지";
+  elNoticeModalMeta.textContent=n.date?"날짜: "+normDateStr(n.date):"";
+  elNoticeModalBody.textContent=n.body||"";
+  elNoticeModalActions.innerHTML="";
+  const link=trim(n.link);
+  if(link&&/^https?:\/\//i.test(link)){
+    const a=document.createElement("a"); a.className="miniBtn"; a.href=link; a.target="_blank"; a.rel="noopener"; a.textContent="링크";
+    elNoticeModalActions.appendChild(a);
+  }
+  const closeBtn=document.createElement("button"); closeBtn.className="miniBtn"; closeBtn.type="button"; closeBtn.textContent="닫기"; closeBtn.addEventListener("click",closeNoticeModal);
+  elNoticeModalActions.appendChild(closeBtn);
+  elNoticeModalDim.classList.add("show"); elNoticeModalDim.setAttribute("aria-hidden","false");
+}
+function closeNoticeModal(){ elNoticeModalDim.classList.remove("show"); elNoticeModalDim.setAttribute("aria-hidden","true"); }
+elNoticeModalClose.addEventListener("click",closeNoticeModal);
+elNoticeModalDim.addEventListener("click",(e)=>{ if(e.target===elNoticeModalDim) closeNoticeModal(); });
+
+function renderNotices(){
+  elNoticeCount.textContent=NOTICE_CACHE.length.toString();
+  elNoticeChip.textContent=NOTICE_CACHE.length+"개";
+  elNoticeSourceChip.textContent="공지사항";
+  elNoticeBody.innerHTML="";
+  if(!NOTICE_CACHE.length){ elNoticeBody.innerHTML=`<div class="empty">공지 없음</div>`; return; }
+  NOTICE_CACHE.forEach(n=>{
+    const div=document.createElement("div"); div.className="item";
+    const left=document.createElement("div"); left.style.cssText="display:flex;flex-direction:column;gap:4px;";
+    const title=document.createElement("div"); title.style.fontWeight="900"; title.textContent=n.title||"(제목 없음)";
+    const meta=document.createElement("div"); meta.className="muted"; meta.textContent=n.date?normDateStr(n.date):"";
+    left.appendChild(title); left.appendChild(meta);
+    const right=document.createElement("span"); right.className="chip"; right.textContent="보기";
+    div.appendChild(left); div.appendChild(right);
+    div.addEventListener("click",()=>openNoticeModal(n));
+    elNoticeBody.appendChild(div);
+  });
+}
+
+elNoticeReload.addEventListener("click",async()=>{
+  try{ localStorage.removeItem(CACHE_PREFIX+"notices"); }catch(e){}
+  setStatus("불러오는 중…",true,true);
+  try{ NOTICE_CACHE=await loadNoticesFromSheet(); renderNotices(); setStatus("완료",true,false); }
+  catch(e){ NOTICE_FROM_SHEET=false; NOTICE_CACHE=[]; renderNotices(); setStatus("불러오기 실패\n"+e.message,false,false); }
+});
+
+// ============================================================
+// 캘린더
+// ============================================================
+function isHeaderLikeCalendar(n){
+  const set=new Set([norm(n.date),norm(n.title),norm(n.body),norm(n.link)].filter(Boolean));
+  return (set.has(norm("날짜"))||set.has(norm("date")))&&(set.has(norm("제목"))||set.has(norm("title")));
+}
+async function loadCalendarFromSheet(){
+  const cached=loadCache("calendar");
+  if(cached) return cached;
+
+  const sheetId=extractSheetId(FIXED_SHEET_URL);
+  const base="https://docs.google.com/spreadsheets/d/"+sheetId+"/gviz/tq?tqx=out:json";
+  const url=base+"&sheet="+encodeURIComponent(CALENDAR_SHEET_NAME)+"&tq="+encodeURIComponent("select A,B,C,D where A is not null or B is not null or C is not null or D is not null");
+  const p=await loadGvizJSONP(url);
+  const cols=p.cols||[], rows=p.rows||[];
+
+  const dateKeys=["날짜","일자","date","day"].map(norm);
+  const titleKeys=["제목","title","subject","일정","name"].map(norm);
+  const bodyKeys=["내용","body","text","memo","메모","설명","desc","description"].map(norm);
+  const linkKeys=["링크","url","link"].map(norm);
+
+  let header=cols.map(h=>norm(h));
+  let idxDate=findCol(header,dateKeys), idxTitle=findCol(header,titleKeys);
+  let idxBody=findCol(header,bodyKeys), idxLink=findCol(header,linkKeys);
+  let startRow=0;
+
+  const labelsBad=header.every(h=>!h||/^[a-z]$/.test(h));
+  if((idxDate<0||idxTitle<0)&&rows.length&&labelsBad){
+    const first=rows[0].map(v=>norm(v));
+    const d2=findCol(first,dateKeys), t2=findCol(first,titleKeys);
+    if(d2>=0&&t2>=0){ idxDate=d2; idxTitle=t2; idxBody=findCol(first,bodyKeys); idxLink=findCol(first,linkKeys); startRow=1; }
+  }
+  if(idxDate<0) idxDate=0; if(idxTitle<0) idxTitle=1; if(idxBody<0) idxBody=2; if(idxLink<0) idxLink=3;
+
+  let list=[];
+  for(let i=startRow;i<rows.length;i++){
+    const r=rows[i]||[];
+    const rawDate=trim(r[idxDate]??""), rawTitle=trim(r[idxTitle]??"");
+    const rawBody=trim(r[idxBody]??""), rawLink=trim(r[idxLink]??"");
+    if(!rawDate&&!rawTitle&&!rawBody&&!rawLink) continue;
+    list.push({date:normDateStr(rawDate),title:rawTitle,body:rawBody,link:rawLink});
+  }
+  list=list.filter(x=>!isHeaderLikeCalendar(x));
+  list.sort((a,b)=>{ const ad=normDateStr(a.date),bd=normDateStr(b.date); if(ad&&bd) return ad.localeCompare(bd); if(ad&&!bd) return -1; if(!ad&&bd) return 1; return 0; });
+
+  saveCache("calendar",list);
+  return list;
+}
+
+function buildCalendarIndex(){ CAL_BY_DATE=new Map(); for(const ev of CAL_CACHE){ const d=normDateStr(ev.date); if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue; if(!CAL_BY_DATE.has(d)) CAL_BY_DATE.set(d,[]); CAL_BY_DATE.get(d).push(ev); } }
+function daysInMonthUTC(y,m0){ return new Date(Date.UTC(y,m0+1,0)).getUTCDate(); }
+function weekdayIndexKST(y,m0,d){ const dt=new Date(Date.UTC(y,m0,d,0,0,0)); const w=new Intl.DateTimeFormat("en-US",{timeZone:KST_TZ,weekday:"short"}).format(dt); const map={Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6}; return map[w]??0; }
+function ymd(y,m0,d){ return `${y}-${String(m0+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
+
+function renderCalendar(){
+  const y=CAL_MONTH.y, m0=CAL_MONTH.m;
+  const mm=String(m0+1).padStart(2,"0");
+  elCalMonthLabel.textContent=`${y}-${mm}`;
+  const monthStart=`${y}-${mm}-01`, monthEnd=`${y}-${mm}-${String(daysInMonthUTC(y,m0)).padStart(2,"0")}`;
+  let cnt=0;
+  for(const [d,arr] of CAL_BY_DATE.entries()) if(d>=monthStart&&d<=monthEnd) cnt+=arr.length;
+  elCalCount.textContent=String(cnt);
+  elCalCells.innerHTML="";
+  const firstW=weekdayIndexKST(y,m0,1), dimPrevDays=firstW;
+  const prevY=(m0===0)?(y-1):y, prevM=(m0===0)?11:(m0-1);
+  const prevLast=daysInMonthUTC(prevY,prevM), curLast=daysInMonthUTC(y,m0);
+  const today=(()=>{ const p=nowKSTParts(); return ymd(p.y,p.m-1,p.d); })();
+  const mobile=isCalMobile();
+  for(let i=0;i<42;i++){
+    let cellY=y,cellM=m0,cellD=0,inMonth=true;
+    const dayNum=i-dimPrevDays+1;
+    if(dayNum<=0){ inMonth=false; cellY=prevY; cellM=prevM; cellD=prevLast+dayNum; }
+    else if(dayNum>curLast){ inMonth=false; const nY=(m0===11)?(y+1):y,nM=(m0===11)?0:(m0+1); cellY=nY; cellM=nM; cellD=dayNum-curLast; }
+    else cellD=dayNum;
+    const dKey=ymd(cellY,cellM,cellD);
+    const evs=CAL_BY_DATE.get(dKey)||[];
+    const cell=document.createElement("div");
+    cell.className="calCell"+(inMonth?"":" dim")+(dKey===today?" today":"");
+    cell.dataset.date=dKey;
+    const top=document.createElement("div"); top.className="calDayRow";
+    top.innerHTML=`<span class="calDayNum">${cellD}</span><span class="calTodayDot" aria-hidden="true"></span>`;
+    cell.appendChild(top);
+    const eventsWrap=document.createElement("div"); eventsWrap.className="calEvents";
+    if(evs.length){
+      if(mobile){
+        const dots=document.createElement("div"); dots.className="calDots";
+        const showDots=Math.min(evs.length,6);
+        for(let k=0;k<showDots;k++){ const dot=document.createElement("span"); dot.className="calDot"; dot.setAttribute("aria-hidden","true"); dots.appendChild(dot); }
+        if(evs.length>6){ const plus=document.createElement("span"); plus.className="calPlus"; plus.textContent=`+${evs.length-6}`; dots.appendChild(plus); }
+        dots.title=evs.map(e=>(e.title||"일정")).slice(0,8).join(" / ");
+        eventsWrap.appendChild(dots);
+      } else {
+        const maxShow=3;
+        evs.slice(0,maxShow).forEach(ev=>{
+          const chip=document.createElement("div"); chip.className="calChip"; chip.title=ev.title||"일정"; chip.textContent=(ev.title||"일정").toString();
+          chip.addEventListener("click",(e)=>{ e.stopPropagation(); openCalendarEventModal(ev,dKey); });
+          eventsWrap.appendChild(chip);
+        });
+        if(evs.length>maxShow){ const more=document.createElement("div"); more.className="calMore"; more.textContent=`+${evs.length-maxShow}`; eventsWrap.appendChild(more); }
+      }
+    }
+    cell.appendChild(eventsWrap);
+    cell.addEventListener("click",()=>{ if(!evs.length) return; openCalendarDayModal(dKey,evs); });
+    elCalCells.appendChild(cell);
+  }
+}
+
+function openCalendarEventModal(ev,dateKey){
+  elCalModalTitle.textContent=ev.title||"일정"; elCalModalMeta.textContent=dateKey?"날짜: "+dateKey:"";
+  elCalModalBody.textContent=(ev.body||"").toString();
+  elCalModalActions.innerHTML="";
+  const link=trim(ev.link);
+  if(link&&/^https?:\/\//i.test(link)){ const a=document.createElement("a"); a.className="miniBtn"; a.href=link; a.target="_blank"; a.rel="noopener"; a.textContent="링크"; elCalModalActions.appendChild(a); }
+  const closeBtn=document.createElement("button"); closeBtn.className="miniBtn"; closeBtn.type="button"; closeBtn.textContent="닫기"; closeBtn.addEventListener("click",closeCalendarModal);
+  elCalModalActions.appendChild(closeBtn);
+  elCalModalDim.classList.add("show"); elCalModalDim.setAttribute("aria-hidden","false");
+}
+function openCalendarDayModal(dateKey,evs){
+  elCalModalTitle.textContent="일정"; elCalModalMeta.textContent=dateKey?"날짜: "+dateKey:"";
+  const lines=[]; evs.forEach((ev,idx)=>{ const t=(ev.title||"일정").toString(), b=(ev.body||"").toString(); lines.push(b?`${idx+1}. ${t}\n${b}`:`${idx+1}. ${t}`); });
+  elCalModalBody.textContent=lines.join("\n\n");
+  elCalModalActions.innerHTML="";
+  const firstLink=evs.map(e=>trim(e.link)).find(u=>u&&/^https?:\/\//i.test(u))||"";
+  if(firstLink){ const a=document.createElement("a"); a.className="miniBtn"; a.href=firstLink; a.target="_blank"; a.rel="noopener"; a.textContent="링크"; elCalModalActions.appendChild(a); }
+  const closeBtn=document.createElement("button"); closeBtn.className="miniBtn"; closeBtn.type="button"; closeBtn.textContent="닫기"; closeBtn.addEventListener("click",closeCalendarModal);
+  elCalModalActions.appendChild(closeBtn);
+  elCalModalDim.classList.add("show"); elCalModalDim.setAttribute("aria-hidden","false");
+}
+function closeCalendarModal(){ elCalModalDim.classList.remove("show"); elCalModalDim.setAttribute("aria-hidden","true"); }
+elCalModalClose.addEventListener("click",closeCalendarModal);
+elCalModalDim.addEventListener("click",(e)=>{ if(e.target===elCalModalDim) closeCalendarModal(); });
+elCalPrev.addEventListener("click",()=>{ let y=CAL_MONTH.y,m=CAL_MONTH.m; m--; if(m<0){m=11;y--;} CAL_MONTH={y,m}; renderCalendar(); });
+elCalNext.addEventListener("click",()=>{ let y=CAL_MONTH.y,m=CAL_MONTH.m; m++; if(m>11){m=0;y++;} CAL_MONTH={y,m}; renderCalendar(); });
+elCalToday.addEventListener("click",()=>{ const p=nowKSTParts(); CAL_MONTH={y:p.y,m:p.m-1}; renderCalendar(); });
+elCalReload.addEventListener("click",async()=>{
+  try{ localStorage.removeItem(CACHE_PREFIX+"calendar"); }catch(e){}
+  setStatus("불러오는 중…",true,true);
+  try{ CAL_CACHE=await loadCalendarFromSheet(); buildCalendarIndex(); renderCalendar(); setStatus("완료",true,false); }
+  catch(e){ CAL_CACHE=[]; buildCalendarIndex(); renderCalendar(); setStatus("캘린더 불러오기 실패\n"+e.message,false,false); }
+});
+try{ calMQ.addEventListener("change",()=>renderCalendar()); }catch(e){ calMQ.addListener(()=>renderCalendar()); }
+
+// ============================================================
+// 필터 이벤트
+// ============================================================
+function activeModeLabel(){ return FILTER.mode==="recent"?"최근 들은곡":FILTER.mode==="frequent"?"자주":"안들은곡"; }
+function setActiveModeButtons(){ elModeRecent.classList.toggle("active",FILTER.mode==="recent"); elModeFrequent.classList.toggle("active",FILTER.mode==="frequent"); elModeOld.classList.toggle("active",FILTER.mode==="old"); }
+function applyFilterAndRender(){ setActiveModeButtons(); renderSongList(); renderAC(); }
+function setFilterMode(mode){ FILTER.mode=mode; elSortSel.value="default"; FILTER.sort="default"; applyFilterAndRender(); }
+
+elModeRecent.addEventListener("click",()=>setFilterMode("recent"));
+elModeFrequent.addEventListener("click",()=>setFilterMode("frequent"));
+elModeOld.addEventListener("click",()=>setFilterMode("old"));
+elWeeksSel.addEventListener("change",()=>{ FILTER.weeks=parseInt(elWeeksSel.value,10)||FILTER_DEFAULT.weeks; applyFilterAndRender(); });
+elSortSel.addEventListener("change",()=>{ FILTER.sort=elSortSel.value||"default"; applyFilterAndRender(); });
+elFilterReset.addEventListener("click",()=>{ FILTER={...FILTER_DEFAULT}; elWeeksSel.value=String(FILTER.weeks); elSortSel.value="default"; setFilterMode(FILTER.mode); });
+
+// ============================================================
+// ✅ 연결 — DB/META/콘티/공지/캘린더 병렬 로드
+// ============================================================
+async function connect(){
+  const sheetId=extractSheetId(FIXED_SHEET_URL);
+  if(!sheetId){ setStatus("시트 ID 확인 필요",false,false); return; }
+
+  // 캐시 우선 표시
+  const cachedDB=loadCache("db");
+  if(cachedDB){
+    DB=cachedDB.db; META=new Map(cachedDB.meta);
+    rebuildSongs(); buildSongInfo();
+    elCacheStatusBadge.style.display="inline";
+    setActiveModeButtons(); renderSongList(); renderAC();
+    setTopStatus("캐시 데이터",true);
+  }
+
+  if(!navigator.onLine){
+    // 오프라인이면 캐시된 나머지도 불러오기
+    const cn=loadCache("notices"); if(cn) NOTICE_CACHE=cn;
+    const cc=loadCache("calendar"); if(cc){ CAL_CACHE=cc; buildCalendarIndex(); }
+    SETLIST_TABS.forEach(def=>{ const cs=loadCache("sl_"+def.key); if(cs) SETLIST_CACHE.set(def.key,cs); });
+    slRenderTabs(); slRenderList(); renderNotices(); renderCalendar();
+    setStatus("오프라인 — 캐시 데이터 표시 중",true,false);
+    return;
+  }
+
+  setStatus("불러오는 중…",true,true);
+  const base="https://docs.google.com/spreadsheets/d/"+sheetId+"/gviz/tq?tqx=out:json";
+  const urlBySheet=base+"&sheet="+encodeURIComponent(FIXED_SHEET_NAME);
+  const urlByGid=base+"&gid="+encodeURIComponent(FIXED_GID);
 
   try{
-    calMQ.addEventListener("change", () => renderCalendar());
-  } catch(e){
-    calMQ.addListener(() => renderCalendar());
-  }
+    // DB 로드
+    let cols,rows;
+    try{ const p=await loadGvizJSONP(urlBySheet); cols=p.cols; rows=p.rows; }
+    catch(e1){ const p=await loadGvizJSONP(urlByGid); cols=p.cols; rows=p.rows; }
+    DB=toDBWithHeaderRecovery(cols,rows);
+    rebuildSongs(); buildSongInfo();
 
-  // ===== 필터 이벤트 =====
-  function applyFilterAndRender(){
-    setActiveModeButtons();
-    renderSongList();
-    renderAC();
-  }
-
-  function setFilterMode(mode){
-    FILTER.mode = mode;
-    elSortSel.value = "default";
-    FILTER.sort = "default";
-    applyFilterAndRender();
-  }
-
-  elModeRecent.addEventListener("click", () => setFilterMode("recent"));
-  elModeFrequent.addEventListener("click", () => setFilterMode("frequent"));
-  elModeOld.addEventListener("click", () => setFilterMode("old"));
-
-  elWeeksSel.addEventListener("change", () => {
-    FILTER.weeks = parseInt(elWeeksSel.value, 10) || FILTER_DEFAULT.weeks;
-    applyFilterAndRender();
-  });
-
-  elSortSel.addEventListener("change", () => {
-    FILTER.sort = elSortSel.value || "default";
-    applyFilterAndRender();
-  });
-
-  elFilterReset.addEventListener("click", () => {
-    FILTER = { ...FILTER_DEFAULT };
-    elWeeksSel.value = String(FILTER.weeks);
-    elSortSel.value = "default";
-    setFilterMode(FILTER.mode);
-  });
-
-  // ===== 전체 렌더 =====
-  function renderAll(){
-    renderSongList();
-    renderResults();
-    renderAC();
-    slRenderTabs();
-    slRenderList();
-    setActiveModeButtons();
-    renderNotices();
-    renderCalendar();
-  }
-
-  // ===== 연결(DB/META/SETLIST/NOTICE/CALENDAR) =====
-  async function connect(){
-    const sheetId = extractSheetId(FIXED_SHEET_URL);
-    if (!sheetId){
-      setStatus("시트 ID 확인 필요", false, false);
-      return;
-    }
-
-    const base = "https://docs.google.com/spreadsheets/d/" + sheetId + "/gviz/tq?tqx=out:json";
-    const urlBySheet = base + "&sheet=" + encodeURIComponent(FIXED_SHEET_NAME);
-    const urlByGid = base + "&gid=" + encodeURIComponent(FIXED_GID);
-
-    setStatus("불러오는 중…", true, true);
-
+    // META 로드
     try{
-      try{
-        const p1 = await loadGvizJSONP(urlBySheet);
-        DB = toDBWithHeaderRecovery(p1.cols, p1.rows);
-      } catch(e1){
-        const p2 = await loadGvizJSONP(urlByGid);
-        DB = toDBWithHeaderRecovery(p2.cols, p2.rows);
-      }
-
-      rebuildSongs();
-      buildSongInfo();
-
-      try{
-        const metaUrlBySheet = base + "&sheet=" + encodeURIComponent(META_SHEET_NAME);
-        const mp1 = await loadGvizJSONP(metaUrlBySheet);
-        META = toMetaMapWithHeaderRecovery(mp1.cols, mp1.rows);
-      } catch(e1){
-        if (META_GID){
-          try{
-            const metaUrlByGid = base + "&gid=" + encodeURIComponent(META_GID);
-            const mp2 = await loadGvizJSONP(metaUrlByGid);
-            META = toMetaMapWithHeaderRecovery(mp2.cols, mp2.rows);
-          } catch(e2){
-            META = new Map();
-          }
-        } else {
-          META = new Map();
-        }
-      }
-
-      await loadAllSetlists();
-
-      try{
-        NOTICE_CACHE = await loadNoticesFromSheet();
-      } catch(e){
-        NOTICE_FROM_SHEET = false;
-        NOTICE_CACHE = [];
-      }
-
-      try{
-        CAL_CACHE = await loadCalendarFromSheet();
-      } catch(e){
-        CAL_CACHE = [];
-      }
-      buildCalendarIndex();
-
-      elWeeksSel.value = String(FILTER.weeks);
-      setFilterMode(FILTER.mode);
-
-      renderAll();
-      setStatus("연결됨", true, false);
-    } catch(e){
-      setStatus("연결 실패\n" + e.message, false, false);
+      const mp=await loadGvizJSONP(base+"&sheet="+encodeURIComponent(META_SHEET_NAME));
+      META=toMetaMapWithHeaderRecovery(mp.cols,mp.rows);
+    }catch(e){
+      if(META_GID){
+        try{ const mp=await loadGvizJSONP(base+"&gid="+encodeURIComponent(META_GID)); META=toMetaMapWithHeaderRecovery(mp.cols,mp.rows); }
+        catch(e2){ META=new Map(); }
+      } else META=new Map();
     }
+
+    // DB + META 캐시 저장
+    saveCache("db",{db:DB, meta:[...META.entries()]});
+    elCacheStatusBadge.style.display="none";
+
+    // ✅ 콘티·공지·캘린더 병렬 로드
+    const [slRes,noticeRes,calRes]=await Promise.allSettled([
+      loadAllSetlists(),
+      loadNoticesFromSheet(),
+      loadCalendarFromSheet(),
+    ]);
+
+    if(noticeRes.status==="fulfilled") NOTICE_CACHE=noticeRes.value;
+    else NOTICE_CACHE=loadCache("notices")||[];
+
+    if(calRes.status==="fulfilled") CAL_CACHE=calRes.value;
+    else CAL_CACHE=loadCache("calendar")||[];
+    buildCalendarIndex();
+
+    elWeeksSel.value=String(FILTER.weeks);
+    setFilterMode(FILTER.mode);
+
+    renderSongList(); renderResults(); renderAC(); setActiveModeButtons();
+    slRenderTabs(); slRenderList();
+    renderNotices(); renderCalendar();
+    setStatus("연결됨",true,false);
+  }catch(e){
+    setStatus("연결 실패\n"+e.message,false,false);
   }
+}
 
-  // ===== 검색 이벤트 =====
-  elQ.addEventListener("input", () => { renderAll(); });
+// ============================================================
+// 검색 이벤트
+// ============================================================
+// ✅ input 핸들러: 검색 뷰만 업데이트 (캘린더·공지 재렌더 없음)
+elQ.addEventListener("input",()=>{ renderSearchView(); });
+elQ.addEventListener("keydown",(e)=>{
+  if(e.key==="ArrowDown"){ e.preventDefault(); if(elAC.style.display!=="block") renderAC(); stepAC(+1); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); if(elAC.style.display!=="block") renderAC(); stepAC(-1); }
+  else if(e.key==="Enter"){ if(elAC.style.display==="block"&&acIndex>=0){ e.preventDefault(); chooseAC(acIndex); } }
+  else if(e.key==="Escape") closeAC();
+});
+elQ.addEventListener("focus",()=>renderAC());
+document.addEventListener("click",(e)=>{ if(!elAC.contains(e.target)&&e.target!==elQ) closeAC(); });
+elPPClose.addEventListener("click",closePersonPanel);
+elClear.addEventListener("click",()=>{
+  elQ.value=""; closeAC(); closePersonPanel(); hideMediaBox(); hideMetaBox();
+  renderSearchView(); elQ.focus();
+});
 
-  elQ.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowDown"){
-      e.preventDefault();
-      if (elAC.style.display !== "block") renderAC();
-      stepAC(+1);
-    } else if (e.key === "ArrowUp"){
-      e.preventDefault();
-      if (elAC.style.display !== "block") renderAC();
-      stepAC(-1);
-    } else if (e.key === "Enter"){
-      if (elAC.style.display === "block" && acIndex >= 0){
-        e.preventDefault();
-        chooseAC(acIndex);
-      }
-    } else if (e.key === "Escape"){
-      closeAC();
-    }
-  });
+// ============================================================
+// 초기화
+// ============================================================
+setView("search");
+setActiveModeButtons();
+slRenderTabs(); slRenderList();
+hideMediaBox(); hideMetaBox();
 
-  elQ.addEventListener("focus", () => renderAC());
-
-  document.addEventListener("click", (e) => {
-    if (!elAC.contains(e.target) && e.target !== elQ) closeAC();
-  });
-
-  elPPClose.addEventListener("click", closePersonPanel);
-
-  elClear.addEventListener("click", () => {
-    elQ.value = "";
-    closeAC();
-    closePersonPanel();
-    hideMediaBox();
-    hideMetaBox();
-    renderAll();
-    elQ.focus();
-  });
-
-  setView("search");
-  setActiveModeButtons();
-  slRenderTabs();
-  slRenderList();
-
-  setStatus("불러오는 중…", true, true);
-  connect();
-  renderAll();
-  hideMediaBox();
-  hideMetaBox();
+setStatus("불러오는 중…",true,true);
+connect();
 </script>
 </body>
 </html>
